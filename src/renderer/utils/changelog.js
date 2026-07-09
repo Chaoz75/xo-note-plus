@@ -9,6 +9,14 @@
 
 const CHANGELOG = [
   {
+    version: '1.1.8',
+    date: '2026-07-09',
+    changes: [
+      'Fixed: GitHub was showing two separate "License" tabs on the repo page. This happened because both LICENSE and LICENSE.txt sat at the repo root, and GitHub treats each as its own license file.',
+      'The installer-only copy of the license moved to build/LICENSE.txt so only the root-level LICENSE remains for GitHub to detect. The Windows installer\'s license-acceptance screen still shows the same "All Rights Reserved" text as before — nothing changes for people installing the app.'
+    ]
+  },
+  {
     version: '1.1.7',
     date: '2026-07-09',
     changes: [

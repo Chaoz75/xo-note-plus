@@ -1,6 +1,6 @@
 {
   "name": "xo-note-plus",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "description": "XO NOTE+ — A premium local markdown workspace by XO Systems",
   "main": "src/main/main.js",
   "scripts": {
@@ -37,7 +37,7 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "installerIcon": "src/renderer/assets/icon.ico",
-      "license": "LICENSE.txt"
+      "license": "build/LICENSE.txt"
     },
     "publish": [
       {
