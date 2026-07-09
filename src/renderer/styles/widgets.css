@@ -1,0 +1,295 @@
+/* ═══════════════════════════════════════════════════════
+   XO NOTE+ WIDGETS — V2 Premium
+   ═══════════════════════════════════════════════════════ */
+
+.widgets-bar {
+  position: fixed;
+  bottom: 30px;
+  left: 0;
+  width: 200px;
+  background: var(--bg-secondary);
+  backdrop-filter: blur(8px);
+  border-right: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  z-index: 50;
+  padding: 10px;
+  box-shadow: var(--glow-border);
+}
+
+.widget-clocks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.clock-widget {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* 3-up per row at this bar's fixed width — a 4th+ clock wraps onto its
+     own row instead of squeezing every clock too narrow to read */
+  flex: 1 1 calc(33.333% - 4px);
+  min-width: 0;
+  padding: 8px 4px;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.clock-widget .clock-time { white-space: nowrap; }
+.clock-widget:hover {
+  border-color: var(--border-light);
+  box-shadow: 0 0 10px var(--accent-dim);
+}
+
+.clock-label {
+  font-size: 7px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+
+.clock-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-primary);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.clock-widget-mini {
+  display: block;
+  margin: 4px auto;
+  filter: drop-shadow(0 0 6px var(--accent-dim));
+}
+
+.clock-remove-btn {
+  padding: 0 !important;
+  opacity: 0;
+  transition: opacity 0.15s !important;
+}
+
+.clock-widget:hover .clock-remove-btn {
+  opacity: 1;
+}
+
+.clock-widget:hover .clock-remove-btn:hover {
+  color: #ff5070 !important;
+}
+
+/* Mini Calendar */
+.widget-calendar-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s;
+  user-select: none;
+}
+.widget-calendar-toggle-row:hover { background: var(--bg-hover); }
+.widget-calendar-toggle-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.widget-calendar-chevron {
+  font-size: 10px;
+  color: var(--text-dim);
+  transition: transform 0.2s;
+}
+.widget-calendar-block.collapsed .widget-calendar-chevron { transform: rotate(-90deg); }
+.widget-calendar-block.collapsed .widget-calendar { display: none; }
+
+.widget-calendar {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.cal-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+}
+
+.cal-nav {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+.cal-nav:hover { color: var(--accent); background: var(--accent-dim); }
+
+.cal-days-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+
+.cal-day-label {
+  text-align: center;
+  font-size: 8px;
+  color: var(--text-dim);
+  font-weight: 700;
+  padding: 2px 0;
+  letter-spacing: 0.5px;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.cal-day {
+  text-align: center;
+  font-size: 9px;
+  padding: 3px 0;
+  color: var(--text-secondary);
+  border-radius: 4px;
+  cursor: default;
+  font-weight: 400;
+  transition: all 0.1s;
+  position: relative;
+}
+.cal-day:hover:not(.other-month):not(.today) {
+  background: var(--bg-hover);
+}
+
+.cal-day.other-month {
+  color: var(--text-dim);
+  opacity: 0.3;
+}
+
+.cal-day.today {
+  background: var(--accent-bg);
+  color: #000;
+  font-weight: 800;
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.cal-day.has-notes::after {
+  content: '';
+  position: absolute;
+  bottom: 1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent-bg);
+}
+.cal-day.has-notes.has-custom-color::after {
+  background: var(--dot-color);
+}
+
+/* ═══ DASHBOARD CALENDAR ═══ */
+.dashboard-calendar-widget {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.dashboard-calendar-widget .cal-header { margin-bottom: 14px; }
+.dashboard-calendar-widget .cal-title { font-size: 15px; font-weight: 800; letter-spacing: 1px; }
+.dashboard-calendar-widget .cal-days-header { margin-bottom: 6px; }
+.dashboard-calendar-widget .cal-day-label { font-size: 11px; font-weight: 800; letter-spacing: 1px; }
+.dashboard-calendar-widget .cal-grid {
+  flex: 1;
+  align-content: stretch;
+  gap: 2px;
+}
+.dashboard-calendar-widget .cal-day {
+  font-size: 14px;
+  padding: 0;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+}
+.dashboard-calendar-widget .cal-day:hover:not(.other-month):not(.today) {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-radius: 50%;
+}
+.dashboard-calendar-widget .cal-day.today {
+  font-size: 14px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: auto;
+}
+
+/* ═══ DASHBOARD CLOCKS ═══ */
+.dashboard-clocks-widget .clock-widget {
+  padding: 16px 12px;
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  min-width: 100px;
+  text-align: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+.dashboard-clocks-widget .clock-label {
+  font-size: 11px;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+  color: var(--text-dim);
+  font-weight: 800;
+}
+.dashboard-clocks-widget .clock-time {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 1px;
+  text-shadow: 0 0 20px var(--accent-glow);
+}
+.dashboard-clocks-widget .clock-remove-btn {
+  font-size: 10px;
+  margin-top: 6px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+/* ═══ CLOCK ADD WIDGET ═══ */
+.clock-add-widget { display: flex; justify-content: center; padding: 6px 0 2px 0; }
+.clock-add-btn { background: var(--accent-dim); border: 1px solid var(--accent-outline); color: var(--accent); width: 24px; height: 24px; border-radius: 50%; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; opacity: 0.5; }
+.clock-add-btn:hover { opacity: 1; background: var(--accent-bg); color: var(--bg-primary); }
+
+/* ═══ DRAG ROOT DROP TARGET ═══ */
+.file-tree.drag-root-target {
+  border-top: 2px solid var(--accent);
+  background: var(--accent-dim);
+}

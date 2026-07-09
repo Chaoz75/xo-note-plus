@@ -1,0 +1,3 @@
+@echo off
+echo Starting XO NOTE+...
+call npm start

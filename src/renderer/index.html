@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XO NOTE+</title>
+  <link rel="stylesheet" href="styles/themes.css">
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/editor.css">
+  <link rel="stylesheet" href="styles/widgets.css">
+</head>
+<body class="theme-dark-default" data-gradient-intensity="0.5" data-gradient-animate="true">
+  <!-- Animated gradient background -->
+  <div id="gradient-bg" class="gradient-bg"></div>
+  <!-- Custom background image (Settings > Appearance), hidden until set -->
+  <div id="custom-bg-image" class="custom-bg-image hidden"></div>
+  <!-- Solid background color layer (Settings > Appearance > Background Style) -->
+  <div id="custom-bg-solid" class="custom-bg-solid hidden"></div>
+
+  <!-- ═══ SETUP WIZARD (first launch) ═══ -->
+  <div id="setup-wizard" class="setup-wizard hidden">
+    <div class="setup-card">
+      <img src="assets/logo-light.png" alt="XOS" class="setup-logo">
+      <h1 class="brand-title">XO NOTE<span class="brand-plus">+</span></h1>
+      <p class="setup-subtitle">BY XO SYSTEMS</p>
+      <p class="setup-desc">Choose a folder on your computer to store your notes. This will be your vault — all your markdown files live here as real files you can browse in Explorer.</p>
+      <button id="btn-select-vault" class="btn-primary btn-lg">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+        Select Vault Folder
+      </button>
+      <p class="setup-hint">You can change this later in Settings</p>
+    </div>
+  </div>
+
+  <!-- ═══ MAIN APP ═══ -->
+  <div id="app" class="app-container hidden">
+
+    <!-- ── Title Bar ── -->
+    <div class="titlebar" id="titlebar">
+      <div class="titlebar-left">
+        <button class="titlebar-btn icon-btn" id="btn-home" title="Home" style="-webkit-app-region: no-drag;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        </button>
+        <img src="assets/logo-light.png" alt="XOS" class="titlebar-logo">
+        <span class="titlebar-brand">XO NOTE<span class="brand-plus">+</span></span>
+      </div>
+      <div class="titlebar-center">
+        <button class="titlebar-btn icon-btn" id="btn-global-search" title="Search (Ctrl+P)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+        </button>
+        <div class="search-bar" id="search-bar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+          <input type="text" id="search-input" placeholder="Search notes..." autocomplete="off">
+          <div id="search-results" class="search-results hidden"></div>
+        </div>
+      </div>
+      <div class="titlebar-right">
+        <button class="titlebar-btn icon-btn" id="btn-settings" title="Settings">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path></svg>
+        </button>
+        <button class="titlebar-btn icon-btn" id="btn-quick-capture" title="Quick Capture (Ctrl+Shift+N)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>
+        </button>
+        <div class="titlebar-window-controls">
+          <button class="win-btn" id="btn-min" title="Minimize">─</button>
+          <button class="win-btn" id="btn-max" title="Maximize">□</button>
+          <button class="win-btn win-close" id="btn-close" title="Close">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Main Content ── -->
+    <div class="main-content">
+      <button class="sidebar-toggle-btn toggle-left" id="btn-toggle-left-rail" title="Toggle Left Panel">◀</button>
+      <button class="sidebar-toggle-btn toggle-right" id="btn-toggle-right-sidebar" title="Toggle Right Panel">▶</button>
+
+      <!-- Left Rail: Categories/Workspaces -->
+      <div class="left-rail" id="left-rail">
+        <div class="rail-section">
+          <div class="rail-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+            <span>Spaces</span>
+          </div>
+          <div id="workspace-list" class="rail-list"></div>
+        </div>
+
+        <div class="rail-section">
+          <div class="rail-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            <span>Starred</span>
+          </div>
+          <div id="starred-list" class="rail-list"></div>
+        </div>
+
+        <div class="rail-section">
+          <div class="rail-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <span>Recent</span>
+          </div>
+          <div id="recent-list" class="rail-list"></div>
+        </div>
+
+        <div class="rail-section rail-bottom">
+          <div class="rail-header clickable" id="btn-quick-note">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>
+            <span>QUICK NOTE</span>
+          </div>
+        </div>
+
+        <div class="rail-branding">
+          <img src="assets/logo-light.png" alt="XOS" class="rail-logo">
+          <span class="rail-brand-text">XOS</span>
+        </div>
+      </div>
+
+      <!-- File Tree Panel -->
+      <div class="file-panel" id="file-panel">
+        <div class="file-panel-header">
+          <button class="icon-btn-sm" id="btn-back-folder" title="Back" style="display:none;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"></path></svg>
+          </button>
+          <span class="file-panel-title" id="file-panel-title">Files</span>
+          <div class="file-panel-actions">
+            <button class="icon-btn-sm" id="btn-new-file" title="New Note">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+            </button>
+            <button class="icon-btn-sm" id="btn-refresh-tree" title="Refresh Files">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+            </button>
+            <button class="icon-btn-sm" id="btn-new-folder" title="New Folder">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>
+            </button>
+          </div>
+        </div>
+        <div class="file-tree" id="file-tree"></div>
+      </div>
+
+      <!-- Editor Area -->
+      <div class="editor-area" id="editor-area">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb" id="breadcrumb"></div>
+
+        <!-- Tab Bar -->
+        <div class="tab-bar" id="tab-bar"></div>
+
+        <!-- Editor Content -->
+        <div class="editor-content" id="editor-content">
+          <!-- Home Dashboard shown when no file open -->
+          <div class="home-dashboard hidden" id="home-dashboard">
+            <div class="dashboard-header">
+              <div class="dashboard-welcome" id="dashboard-welcome"></div>
+              <div class="dashboard-controls" style="position:absolute;top:10px;right:10px;display:flex;gap:6px;z-index:10;">
+                <button id="btn-dashboard-reset" style="background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-dim);opacity:0.5;" title="Reset dashboard layout">↺</button>
+                <button id="btn-dashboard-lock" style="background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-dim);opacity:0.5;" title="Toggle widget lock/unlock">🔒</button>
+              </div>
+              <div class="dashboard-date-time">
+                <div class="dashboard-date" id="dashboard-date">Monday, March 16</div>
+                <div class="dashboard-time" id="dashboard-time">14:35</div>
+              </div>
+            </div>
+            <div class="dashboard-widgets">
+              <div class="dashboard-calendar-widget" id="dashboard-calendar"></div>
+              <div class="dashboard-clocks-widget" id="dashboard-clocks"></div>
+            </div>
+            <div class="dashboard-stickies">
+              <div class="dashboard-sticky-section">
+                <div class="sticky-header">
+                  <button class="sticky-toggle-btn" id="btn-toggle-sticky-tasks" data-toggle-panel="sticky-tasks-panel">▼</button>
+                  <span class="sticky-section-title">QUICK TASKS</span>
+                  <button class="sticky-add-btn" id="btn-add-sticky-task" title="Add Task">+</button>
+                </div>
+                <div class="sticky-panel" id="sticky-tasks-panel">
+                  <div id="sticky-tasks-list" class="sticky-list"></div>
+                </div>
+              </div>
+              <div class="dashboard-sticky-section">
+                <div class="sticky-header">
+                  <button class="sticky-toggle-btn" id="btn-toggle-sticky-notes" data-toggle-panel="sticky-notes-panel">▼</button>
+                  <span class="sticky-section-title">QUICK NOTES</span>
+                  <button class="sticky-add-btn" id="btn-add-sticky-note" title="Add Note">+</button>
+                </div>
+                <div class="sticky-panel" id="sticky-notes-panel">
+                  <div id="sticky-notes-list" class="sticky-list"></div>
+                </div>
+              </div>
+            </div>
+            <div class="dashboard-shortcuts">
+              <h3>Keyboard Shortcuts</h3>
+              <div class="shortcuts-grid">
+                <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>N</kbd> New Note</div>
+                <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>P</kbd> Quick Search</div>
+                <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd> Quick Capture</div>
+                <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>Z</kbd> Undo</div>
+                <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>B</kbd> Bold</div>
+                <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>I</kbd> Italic</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Welcome screen shown when no file open (legacy) -->
+          <div class="welcome-screen" id="welcome-screen">
+            <img src="assets/logo-light.png" alt="XOS" class="welcome-logo">
+            <h2 class="brand-title">XO NOTE<span class="brand-plus">+</span></h2>
+            <p class="welcome-sub">Open a note from the sidebar or create a new one</p>
+            <div class="welcome-shortcuts">
+              <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>N</kbd> New Note</div>
+              <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>P</kbd> Quick Search</div>
+              <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd> Quick Capture</div>
+              <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>Z</kbd> Undo</div>
+            </div>
+          </div>
+
+          <!-- Markdown editor (hidden until file opened) -->
+          <div class="editor-wrapper hidden" id="editor-wrapper">
+            <div class="editor-toolbar" id="editor-toolbar">
+              <button class="toolbar-btn" data-action="bold" title="Bold (Ctrl+B)"><b>B</b></button>
+              <button class="toolbar-btn" data-action="italic" title="Italic (Ctrl+I)"><i>I</i></button>
+              <button class="toolbar-btn" data-action="strikethrough" title="Strikethrough">~S~</button>
+              <button class="toolbar-btn" data-action="underline" title="Underline (Ctrl+U)"><u>U</u></button>
+              <span class="toolbar-sep"></span>
+              <button class="toolbar-btn" data-action="h1" title="Heading 1">H1</button>
+              <button class="toolbar-btn" data-action="h2" title="Heading 2">H2</button>
+              <button class="toolbar-btn" data-action="h3" title="Heading 3">H3</button>
+              <span class="toolbar-sep"></span>
+              <button class="toolbar-btn" data-action="bullet" title="Bullet List">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+              </button>
+              <button class="toolbar-btn" data-action="checklist" title="Checklist">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+              </button>
+              <button class="toolbar-btn" data-action="code" title="Code Block">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+              </button>
+              <button class="toolbar-btn" data-action="table" title="Insert Table">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
+              </button>
+              <button class="toolbar-btn" data-action="link" title="Link">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+              </button>
+              <button class="toolbar-btn" data-action="highlight" title="Highlight">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+              </button>
+              <span class="toolbar-sep"></span>
+              <button class="toolbar-btn" data-action="textcolor" title="Text Color">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M7 11h10M3 16h18"></path></svg>
+              </button>
+              <input type="color" id="text-color-input" class="toolbar-color-input" value="#ffffff" title="Text Color">
+              <button class="toolbar-btn" data-action="highlightcolor" title="Highlight Color">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17.5A2.5 2.5 0 0 1 5.5 15h13a2.5 2.5 0 0 1 2.5 2.5M3 17.5A2.5 2.5 0 0 0 5.5 20h13a2.5 2.5 0 0 0 2.5-2.5"></path></svg>
+              </button>
+              <input type="color" id="highlight-color-input" class="toolbar-color-input" value="#ffff00" title="Highlight Color">
+              <button class="toolbar-btn" data-action="emoji" title="Insert Symbol">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+              </button>
+              <button class="toolbar-btn" data-action="removeformat" title="Clear Formatting">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l18 18M12 3v18M6 6h12M6 12h12M6 18h12"></path></svg>
+              </button>
+              <span class="toolbar-sep"></span>
+              <button class="toolbar-btn" id="btn-save-file" title="Save (Ctrl+S)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+              </button>
+              <button class="toolbar-btn" id="btn-save-as" title="Save As... (Ctrl+Shift+S)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><line x1="12" y1="17" x2="12" y2="14"></line><path d="M10.5 15.5L12 14l1.5 1.5"></path></svg>
+              </button>
+              <button class="toolbar-btn" id="btn-save-copy" title="Save a Copy... (Ctrl+Alt+S)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="13" height="13" rx="2" ry="2"></rect><path d="M4 16V4a2 2 0 0 1 2-2h12"></path></svg>
+              </button>
+              <span class="toolbar-sep"></span>
+              <button class="toolbar-mode-btn" id="btn-toggle-mode" title="Switch between Visual and Markdown editing">VISUAL</button>
+              <button class="toolbar-btn" data-action="preview" title="Toggle Preview" id="btn-toggle-preview">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+              <div class="toolbar-right">
+                <select id="font-size-select" class="toolbar-select" title="Font Size">
+                  <option value="12">12px</option>
+                  <option value="13">13px</option>
+                  <option value="14" selected>14px</option>
+                  <option value="15">15px</option>
+                  <option value="16">16px</option>
+                  <option value="18">18px</option>
+                  <option value="20">20px</option>
+                  <option value="22">22px</option>
+                  <option value="24">24px</option>
+                </select>
+                <span class="save-indicator" id="save-indicator">Saved</span>
+              </div>
+            </div>
+            <div class="editor-split">
+              <div id="editor-rich" class="editor-rich" contenteditable="true" spellcheck="true"></div>
+              <textarea id="editor-textarea" class="editor-textarea hidden" spellcheck="true"></textarea>
+              <div id="editor-preview" class="editor-preview hidden"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Sidebar -->
+      <div class="right-sidebar" id="right-sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+            Info
+          </div>
+          <div id="file-info" class="sidebar-content">
+            <p class="sidebar-empty">No file selected</p>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path><circle cx="12" cy="12" r="4"></circle></svg>
+            Daily Quote
+          </div>
+          <div id="daily-quote" class="sidebar-content quote-area">
+            <p class="sidebar-empty">Loading...</p>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+            Links
+          </div>
+          <div id="file-backlinks" class="sidebar-content">
+            <p class="sidebar-empty">No links</p>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            Recent Notes
+            <button class="sidebar-header-action" id="btn-clear-recent" title="Clear all recent notes">Clear</button>
+          </div>
+          <div id="sidebar-recent" class="sidebar-content">
+            <p class="sidebar-empty">No recent notes</p>
+          </div>
+        </div>
+
+        <!-- Widget: XOS Logo -->
+        <div class="sidebar-section widget-section">
+          <div class="widget-logo-box" id="widget-logo-box" style="width:180px;height:180px;">
+            <img src="assets/logo-light.png" alt="XOS" class="widget-logo">
+          </div>
+          <div class="widget-controls hidden">
+            <label class="widget-control-label">Logo Glow</label>
+            <input type="color" id="logo-glow-color" class="widget-color-input" value="#4fc3f7" title="Logo Glow Color">
+
+            <label class="widget-control-label" style="margin-top:12px;">Sync Glow to All Widgets</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="glow-sync-all-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+
+            <label class="widget-control-label" style="margin-top:12px;">Match Glow Intensity</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="glow-match-intensity-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Widget: Analog Clock -->
+        <div class="sidebar-section widget-section">
+          <div class="widget-clock-box" id="widget-clock-box">
+            <canvas id="analog-clock-canvas" width="160" height="160"></canvas>
+          </div>
+        </div>
+
+        <!-- Widget: Date -->
+        <div class="sidebar-section widget-section">
+          <div class="widget-date-box" id="widget-date-box">
+            <div class="widget-date-number">16</div>
+            <div class="widget-date-day">MON</div>
+            <div class="widget-date-motto">lets get this $</div>
+          </div>
+        </div>
+
+        <!-- Widget: Stopwatch -->
+        <div class="sidebar-section widget-section">
+          <div class="widget-stopwatch-box" id="widget-stopwatch-box">
+            <div class="stopwatch-display" id="stopwatch-display">00:00</div>
+            <div class="stopwatch-ms" id="stopwatch-ms">.00</div>
+            <div class="stopwatch-label">STOPWATCH</div>
+            <div class="stopwatch-controls">
+              <button class="stopwatch-btn" id="stopwatch-start">START</button>
+              <button class="stopwatch-btn" id="stopwatch-reset">RESET</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Bottom Bar ── -->
+    <div class="bottom-bar">
+      <div class="bottom-left">
+        <span id="status-text">Ready</span>
+      </div>
+      <div class="bottom-center">
+        <span class="bottom-brand">XO NOTE+ — XOS · XO SYSTEMS</span>
+      </div>
+      <div class="bottom-right">
+        <button class="changelog-toggle-btn" id="btn-changelog" title="What's New">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+          <span id="changelog-version-label">v1.1.0</span>
+          <span class="changelog-dot hidden" id="changelog-dot"></span>
+        </button>
+        <button class="changelog-toggle-btn" id="btn-creators" title="Creators">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          <span>Creators</span>
+        </button>
+        <button class="changelog-toggle-btn" id="btn-update-status" title="Check for Updates">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+          <span id="update-status-label">You're up to Date!</span>
+        </button>
+        <span id="word-count">0 words</span>
+        <span id="char-count">0 chars</span>
+      </div>
+    </div>
+
+    <!-- ── Changelog panel (bottom-right popover) ── -->
+    <div class="changelog-panel hidden" id="changelog-panel">
+      <div class="changelog-panel-header">
+        <span class="changelog-panel-title">What's New</span>
+        <button class="icon-btn-sm" id="btn-changelog-close" title="Close">✕</button>
+      </div>
+      <div class="changelog-panel-body" id="changelog-panel-body"></div>
+    </div>
+
+    <!-- ── Creators panel (bottom-right popover) ── -->
+    <div class="changelog-panel creators-panel hidden" id="creators-panel">
+      <div class="changelog-panel-header">
+        <span class="changelog-panel-title">Creators</span>
+        <button class="icon-btn-sm" id="btn-creators-close" title="Close">✕</button>
+      </div>
+      <div class="changelog-panel-body creators-panel-body">
+        <div class="creator-card">
+          <img class="creator-avatar" src="assets/creators/chaoz.jpg" alt="Chaoz">
+          <div class="creator-info">
+            <span class="creator-name">Chaoz</span>
+            <span class="creator-role">Help Maker / Coder</span>
+          </div>
+          <span class="creator-contact" data-platform="GitHub">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.73.5.98 5.24.98 11.52c0 5.02 3.26 9.28 7.77 10.78.57.1.78-.25.78-.55 0-.27-.01-1-.02-1.96-3.16.69-3.83-1.52-3.83-1.52-.52-1.31-1.26-1.66-1.26-1.66-1.03-.7.08-.69.08-.69 1.14.08 1.74 1.17 1.74 1.17 1.01 1.73 2.65 1.23 3.3.94.1-.73.4-1.23.72-1.51-2.52-.29-5.17-1.26-5.17-5.6 0-1.24.44-2.25 1.17-3.04-.12-.29-.51-1.45.11-3.02 0 0 .96-.31 3.15 1.16a10.9 10.9 0 0 1 5.73 0c2.19-1.47 3.15-1.16 3.15-1.16.62 1.57.23 2.73.11 3.02.73.79 1.17 1.8 1.17 3.04 0 4.35-2.65 5.31-5.18 5.59.41.35.77 1.04.77 2.11 0 1.52-.01 2.75-.01 3.12 0 .3.2.66.79.55A11.03 11.03 0 0 0 23.02 11.5C23.02 5.24 18.27.5 12 .5z"/></svg>
+            <span class="creator-contact-label">GitHub</span>
+            <span class="creator-contact-tooltip">Soon</span>
+          </span>
+        </div>
+        <div class="creator-card">
+          <img class="creator-avatar" src="assets/creators/xorayden.png" alt="XORAYDEN">
+          <div class="creator-info">
+            <span class="creator-name">XORAYDEN</span>
+            <span class="creator-role">Maker</span>
+          </div>
+          <span class="creator-contact" data-platform="Instagram">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"></circle></svg>
+            <span class="creator-contact-label">Instagram</span>
+            <span class="creator-contact-tooltip">Soon</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SETTINGS MODAL ═══ -->
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal-overlay"></div>
+    <div class="modal-content settings-content">
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button class="icon-btn modal-close" id="settings-close">✕</button>
+      </div>
+      <div class="settings-body">
+        <div class="settings-tabs">
+          <button class="settings-tab active" data-tab="appearance">Appearance</button>
+          <button class="settings-tab" data-tab="fonts">Fonts</button>
+          <button class="settings-tab" data-tab="general">General</button>
+          <button class="settings-tab" data-tab="widgets">Widgets</button>
+        </div>
+
+        <!-- Appearance Tab -->
+        <div class="settings-panel active" id="tab-appearance">
+          <div class="setting-group">
+            <label class="setting-label">Theme</label>
+            <div class="theme-grid" id="theme-grid">
+              <button class="theme-card active" data-theme="theme-dark-default">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #0a0a0f, #1a1a2e, #16213e);"></div>
+                <span>Midnight Steel</span>
+              </button>
+              <button class="theme-card" data-theme="theme-crimson">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #1a0000, #3d0000, #8b0000);"></div>
+                <span>Crimson</span>
+              </button>
+              <button class="theme-card" data-theme="theme-violet">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #0d001a, #1a0033, #2d1b69);"></div>
+                <span>Violet Haze</span>
+              </button>
+              <button class="theme-card" data-theme="theme-ember">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #1a0a00, #2d1200, #4a2000);"></div>
+                <span>Ember</span>
+              </button>
+              <button class="theme-card" data-theme="theme-ocean">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #030a10, #081820, #0c2030);"></div>
+                <span>Ocean Deep</span>
+              </button>
+              <button class="theme-card" data-theme="theme-forest">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #040a06, #0a180e, #102016);"></div>
+                <span>Emerald Forest</span>
+              </button>
+              <button class="theme-card" data-theme="theme-neon">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #08060e, #110e1c, #2c244a);"></div>
+                <span>Neon Pulse</span>
+              </button>
+              <button class="theme-card" data-theme="theme-frost">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #0a0e14, #12161e, #1a1e28);"></div>
+                <span>Arctic Frost</span>
+              </button>
+              <button class="theme-card" data-theme="theme-solar">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #1a0f00, #2d1a00, #4a2800);"></div>
+                <span>Solar Flare</span>
+              </button>
+              <button class="theme-card" data-theme="theme-cherry">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #2a1a25, #3d2537, #4a3a52);"></div>
+                <span>Cherry Blossom</span>
+              </button>
+              <button class="theme-card" data-theme="theme-cyberpunk">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #1a0a1a, #3d1452, #2a0a4a);"></div>
+                <span>Cyberpunk</span>
+              </button>
+              <button class="theme-card" data-theme="theme-gold">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #0a0a0a, #1a1a1a, #2d2406);"></div>
+                <span>Midnight Gold</span>
+              </button>
+              <button class="theme-card" data-theme="theme-synthwave">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #1a0a1a, #3d1a5a, #2d0a4a);"></div>
+                <span>Synthwave</span>
+              </button>
+              <button class="theme-card" data-theme="theme-bloodmoon">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #0a0000, #2a0a0a, #3d1015);"></div>
+                <span>Blood Moon</span>
+              </button>
+              <button class="theme-card" data-theme="theme-matrix">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #000000, #0a1a0a, #0a2a0a);"></div>
+                <span>Matrix</span>
+              </button>
+              <button class="theme-card" data-theme="theme-glacial">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #0a0f1a, #1a2a3d, #0a3a52);"></div>
+                <span>Glacial</span>
+              </button>
+              <button class="theme-card" data-theme="theme-toxic">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #0a0a0a, #1a2a0f, #0a3a0a);"></div>
+                <span>Toxic</span>
+              </button>
+              <button class="theme-card" data-theme="theme-royal">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #1a0a2a, #2d1a52, #3d0a6a);"></div>
+                <span>Royal Purple</span>
+              </button>
+              <button class="theme-card" data-theme="theme-sunset">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #2a1a0f, #3d2a1a, #4a1a0a);"></div>
+                <span>Sunset Beach</span>
+              </button>
+              <button class="theme-card" data-theme="theme-stealth">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #000000, #0a0a0a, #0f0f0f);"></div>
+                <span>Stealth</span>
+              </button>
+              <button class="theme-card" data-theme="theme-midnight-neon">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #06060c, #0e0e1c, #00ffc8);"></div>
+                <span>Midnight Neon</span>
+              </button>
+              <button class="theme-card" data-theme="theme-obsidian-rose">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #080608, #140e14, #ff6ea0);"></div>
+                <span>Obsidian Rose</span>
+              </button>
+              <button class="theme-card" data-theme="theme-abyss-blue">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #04060a, #0c1220, #50b4ff);"></div>
+                <span>Abyss Blue</span>
+              </button>
+              <button class="theme-card" data-theme="theme-matte-charcoal">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #141414, #202020, #3a3a3a);"></div>
+                <span>Matte Charcoal</span>
+              </button>
+              <button class="theme-card" data-theme="theme-soft-ivory">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #f5f0e8, #e4ddd2, #dbd4c8);"></div>
+                <span>Soft Ivory</span>
+              </button>
+              <button class="theme-card" data-theme="theme-cool-slate">
+                <div class="theme-preview" style="background: linear-gradient(135deg, #eef2f6, #dae0e8, #d0d8e0);"></div>
+                <span>Cool Slate</span>
+              </button>
+              <button class="theme-card" data-theme="theme-custom">
+                <div class="theme-preview" id="custom-theme-preview" style="background: linear-gradient(135deg, #0a0a14, #1a1a3e);"></div>
+                <span>✨ Custom</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Custom Theme Builder (visible when Custom theme is selected) -->
+          <div class="setting-group hidden" id="custom-theme-builder">
+            <label class="setting-label">Custom Theme Builder</label>
+
+            <div class="custom-theme-row">
+              <span class="custom-theme-row-label">Background Style</span>
+              <div class="custom-bg-mode-toggle">
+                <button class="custom-bg-mode-btn" data-mode="solid" id="custom-mode-solid">Solid</button>
+                <button class="custom-bg-mode-btn active" data-mode="gradient" id="custom-mode-gradient">Gradient</button>
+              </div>
+            </div>
+
+            <div class="custom-theme-row">
+              <span class="custom-theme-row-label" id="custom-color1-label">Color 1</span>
+              <input type="color" id="custom-color1" class="custom-color-input" value="#0a0a14" title="Pick color">
+              <input type="text" id="custom-color1-hex" class="custom-hex-input" value="#0a0a14" maxlength="7" spellcheck="false">
+            </div>
+
+            <div class="custom-theme-row" id="custom-color2-row">
+              <span class="custom-theme-row-label">Color 2</span>
+              <input type="color" id="custom-color2" class="custom-color-input" value="#1a1a3e" title="Pick color">
+              <input type="text" id="custom-color2-hex" class="custom-hex-input" value="#1a1a3e" maxlength="7" spellcheck="false">
+            </div>
+
+            <div class="custom-theme-row" id="custom-direction-row">
+              <span class="custom-theme-row-label">Direction</span>
+              <div class="grad-dir-pad">
+                <button class="grad-dir-btn" data-angle="315" title="From bottom-right to top-left">↖</button>
+                <button class="grad-dir-btn" data-angle="0" title="From bottom to top">↑</button>
+                <button class="grad-dir-btn" data-angle="45" title="From bottom-left to top-right">↗</button>
+                <button class="grad-dir-btn" data-angle="270" title="From right to left">←</button>
+                <button class="grad-dir-btn" data-angle="90" title="From left to right">→</button>
+                <button class="grad-dir-btn" data-angle="225" title="From top-right to bottom-left">↙</button>
+                <button class="grad-dir-btn" data-angle="180" title="From top to bottom">↓</button>
+                <button class="grad-dir-btn active" data-angle="135" title="From top-left to bottom-right">↘</button>
+              </div>
+            </div>
+
+            <div class="custom-theme-row" id="custom-angle-row">
+              <span class="custom-theme-row-label">Fine Angle</span>
+              <input type="range" id="custom-angle" min="0" max="360" step="5" value="135" class="setting-slider" style="flex:1;">
+              <span id="custom-angle-label">135°</span>
+            </div>
+
+            <div class="custom-theme-row" id="custom-spread-row">
+              <span class="custom-theme-row-label">Gradient Spread</span>
+              <input type="range" id="custom-spread" min="10" max="100" step="5" value="100" class="setting-slider" style="flex:1;">
+              <span id="custom-spread-label">100%</span>
+            </div>
+
+            <div class="custom-theme-row">
+              <span class="custom-theme-row-label">Accent Color</span>
+              <input type="color" id="custom-accent" class="custom-color-input" value="#4fc3f7" title="Pick accent color">
+              <input type="text" id="custom-accent-hex" class="custom-hex-input" value="#4fc3f7" maxlength="7" spellcheck="false">
+            </div>
+
+            <div class="setting-hint">Pick colors with the color wheel or type a hex code. Text colors adapt automatically to light or dark backgrounds.</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Brightness</label>
+            <input type="range" id="brightness-slider" min="0.6" max="1.4" step="0.05" value="1" class="setting-slider">
+            <span id="brightness-label">100%</span>
+            <div class="setting-hint">Adjust overall interface brightness</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Gradient Intensity</label>
+            <input type="range" id="gradient-intensity" min="0" max="1" step="0.05" value="0.5" class="setting-slider">
+            <div class="setting-hint">Controls background gradient visibility</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Animated Background</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="gradient-animate" checked>
+              <span class="toggle-slider"></span>
+            </label>
+            <div class="setting-hint">Subtle gradient motion effect</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Background Style</label>
+            <select id="background-style-select" class="setting-select">
+              <option value="gradient">Gradient (animated, default)</option>
+              <option value="solid">Solid Color</option>
+              <option value="image">Custom Image</option>
+            </select>
+            <div class="setting-hint" id="background-style-hint">Animated multi-color gradient behind the app.</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Glass Mode</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="glass-mode-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+            <div class="setting-hint">Makes the sidebar, titlebar, and bottom bar see-through over whichever Background Style is chosen above — turn on or off independent of your background.</div>
+          </div>
+
+          <div class="setting-group hidden" id="background-solid-group">
+            <label class="setting-label">Solid Background Color</label>
+            <input type="color" id="background-solid-color" class="custom-color-input" value="#0a0a14" title="Pick background color">
+            <input type="text" id="background-solid-color-hex" class="custom-hex-input" value="#0a0a14" maxlength="7" spellcheck="false">
+          </div>
+
+          <div class="setting-group hidden" id="background-image-group">
+            <label class="setting-label">Custom Background Image</label>
+            <div class="custom-bg-controls">
+              <button class="btn-sm" id="btn-choose-bg-image">Choose Image...</button>
+              <button class="btn-sm btn-secondary" id="btn-clear-bg-image">Remove</button>
+            </div>
+            <div class="setting-hint" id="custom-bg-status">No custom background set.</div>
+          </div>
+
+          <div class="setting-group hidden" id="bg-blur-group">
+            <label class="setting-label">Background Blur</label>
+            <input type="range" id="bg-blur-slider" min="0" max="150" step="1" value="0" class="setting-slider">
+            <span id="bg-blur-label">0px</span>
+            <div class="setting-hint">Blurs your custom background image (0 = sharp, 150 = fully soft)</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Accent Color</label>
+            <div class="accent-colors" id="accent-colors">
+              <button class="accent-dot active" data-accent="#4fc3f7" style="background:#4fc3f7;"></button>
+              <button class="accent-dot" data-accent="#81c784" style="background:#81c784;"></button>
+              <button class="accent-dot" data-accent="#ff8a65" style="background:#ff8a65;"></button>
+              <button class="accent-dot" data-accent="#ce93d8" style="background:#ce93d8;"></button>
+              <button class="accent-dot" data-accent="#fff176" style="background:#fff176;"></button>
+              <button class="accent-dot" data-accent="#ef5350" style="background:#ef5350;"></button>
+              <button class="accent-dot" data-accent="#ffffff" style="background:#ffffff;"></button>
+              <button class="accent-dot" data-accent="#ff4081" style="background:#ff4081;"></button>
+              <button class="accent-dot" data-accent="#00e5ff" style="background:#00e5ff;"></button>
+              <button class="accent-dot" data-accent="#76ff03" style="background:#76ff03;"></button>
+              <button class="accent-dot" data-accent="#ffd600" style="background:#ffd600;"></button>
+              <button class="accent-dot" data-accent="#ff6e40" style="background:#ff6e40;"></button>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Accent Brightness</label>
+            <input type="range" id="accent-brightness-slider" min="0.6" max="1.4" step="0.05" value="1" class="setting-slider">
+            <span id="accent-brightness-label">100%</span>
+            <div class="setting-hint">Lightens or darkens your accent color independent of overall UI brightness</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Accent Outline Color</label>
+            <input type="color" id="accent-outline-color" class="custom-color-input" value="#4fc3f7" title="Border/outline color">
+            <button class="btn-sm btn-secondary" id="btn-reset-accent-outline">Reset</button>
+            <div class="setting-hint">Separate color for borders and outlines around buttons, inputs, and panels — defaults to matching the accent color</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Accent Gradient</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="accent-gradient-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+            <div class="setting-hint">Uses a two-color gradient instead of a flat color for buttons and highlights</div>
+          </div>
+
+          <div class="setting-group hidden" id="accent-gradient-color2-group">
+            <label class="setting-label">Accent Gradient — 2nd Color</label>
+            <input type="color" id="accent-gradient-color2" class="custom-color-input" value="#ff8a65" title="Second gradient color">
+            <button class="btn-sm btn-secondary" id="btn-reset-accent-gradient-color2">Reset</button>
+            <div class="setting-hint">Defaults to a close tint of your accent color for a subtle blend. Pick your own for more contrast.</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Dashboard Theme</label>
+            <select id="dashboard-theme-select" class="setting-select">
+              <option value="classic">Classic</option>
+              <option value="midnight">Midnight Command</option>
+              <option value="focus">Focus Flow</option>
+              <option value="mission">Mission Control</option>
+              <option value="horizon">Horizon</option>
+              <option value="aurora">Aurora+</option>
+              <option value="neon-district">Neon District+</option>
+              <option value="zen-garden">Zen Garden+</option>
+              <option value="retro-terminal">Retro Terminal+</option>
+              <option value="glass-morphic">Glass Morphic+</option>
+            </select>
+            <div class="setting-hint">Choose a dashboard layout style (+ = premium abstract themes)</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Link Dashboard Colors to Theme</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="dashboard-color-link-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+            <div class="setting-hint">On: the home screen's calendar, keyboard shortcuts, time, and welcome text all follow your active color theme automatically — across all 10 dashboard themes. Off: set your own colors for each below.</div>
+          </div>
+
+          <div class="setting-group" id="dash-custom-colors-group">
+            <label class="setting-label">Home Screen Colors</label>
+            <div class="dash-color-row">
+              <span class="dash-color-row-label">Calendar Background</span>
+              <input type="color" id="dash-color-calendar" class="custom-color-input" value="#1a1a2e" title="Calendar background color">
+              <button class="btn-sm btn-secondary dash-color-reset" data-target="dashCalendarBg">Reset</button>
+            </div>
+            <div class="dash-color-row">
+              <span class="dash-color-row-label">Keyboard Shortcuts</span>
+              <input type="color" id="dash-color-kbd" class="custom-color-input" value="#9090b0" title="Keyboard shortcuts text color">
+              <button class="btn-sm btn-secondary dash-color-reset" data-target="dashKbdColor">Reset</button>
+            </div>
+            <div class="dash-color-row">
+              <span class="dash-color-row-label">Time</span>
+              <input type="color" id="dash-color-time" class="custom-color-input" value="#4fc3f7" title="Time text color">
+              <button class="btn-sm btn-secondary dash-color-reset" data-target="dashTimeColor">Reset</button>
+            </div>
+            <div class="dash-color-row">
+              <span class="dash-color-row-label">Welcome Back</span>
+              <input type="color" id="dash-color-welcome" class="custom-color-input" value="#e8e8f4" title="Welcome Back text color">
+              <button class="btn-sm btn-secondary dash-color-reset" data-target="dashWelcomeColor">Reset</button>
+            </div>
+            <div class="setting-hint">Applies across every dashboard theme. "Reset" clears back to that theme's default color. Only used while "Link Dashboard Colors to Theme" above is off.</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Search Bar Style</label>
+            <select id="search-bar-style-select" class="setting-select">
+              <option value="solid">Solid</option>
+              <option value="gradient">Gradient</option>
+            </select>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Tab Bar Style</label>
+            <select id="tab-bar-style-select" class="setting-select">
+              <option value="solid">Solid</option>
+              <option value="gradient">Gradient</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Fonts Tab -->
+        <div class="settings-panel" id="tab-fonts">
+          <div class="setting-group">
+            <label class="setting-label">Editor Font</label>
+            <select id="editor-font-select" class="setting-select">
+              <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+              <option value="'Fira Code', monospace">Fira Code</option>
+              <option value="'Cascadia Code', monospace">Cascadia Code</option>
+              <option value="'Source Code Pro', monospace">Source Code Pro</option>
+              <option value="Consolas, monospace">Consolas</option>
+              <option value="'Courier New', monospace">Courier New</option>
+              <option value="'Inter', sans-serif">Inter</option>
+              <option value="'Georgia', serif">Georgia</option>
+              <option value="'Segoe UI', sans-serif">Segoe UI</option>
+              <option value="'Arial', sans-serif">Arial</option>
+            </select>
+            <div class="setting-hint">Font used in the writing/editing area</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Editor Font Size</label>
+            <input type="range" id="global-font-size" min="12" max="28" step="1" value="14" class="setting-slider">
+            <span id="font-size-label">14px</span>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">UI Font</label>
+            <select id="ui-font-select" class="setting-select">
+              <option value="'Inter', sans-serif">Inter (Default)</option>
+              <option value="Impact, 'Arial Black', sans-serif">Impact</option>
+              <option value="'Arial Black', 'Arial Bold', sans-serif">Arial Black</option>
+              <option value="'Segoe UI', sans-serif">Segoe UI</option>
+              <option value="'Roboto', sans-serif">Roboto</option>
+              <option value="'Helvetica Neue', 'Helvetica', sans-serif">Helvetica</option>
+              <option value="'Montserrat', sans-serif">Montserrat</option>
+              <option value="'Oswald', sans-serif">Oswald</option>
+              <option value="'Poppins', sans-serif">Poppins</option>
+              <option value="'Tahoma', sans-serif">Tahoma</option>
+            </select>
+            <div class="setting-hint">Font for folder names, labels, sidebar text — everything outside the editor</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">UI Font Weight</label>
+            <select id="ui-font-weight" class="setting-select">
+              <option value="400">Regular (400)</option>
+              <option value="500">Medium (500)</option>
+              <option value="600">Semi-Bold (600)</option>
+              <option value="700">Bold (700)</option>
+              <option value="800">Extra-Bold (800)</option>
+              <option value="900">Black (900)</option>
+            </select>
+            <div class="setting-hint">How bold the UI text appears — great for making file names pop</div>
+          </div>
+
+          <div class="font-preview-box" id="font-preview-box">
+            <div class="font-preview-label">Preview</div>
+            <div class="font-preview-ui" id="font-preview-ui">Folder Name / File Name.md</div>
+            <div class="font-preview-editor" id="font-preview-editor">The quick brown fox jumps over the lazy dog. 0123456789</div>
+          </div>
+        </div>
+
+        <!-- General Tab -->
+        <div class="settings-panel" id="tab-general">
+          <div class="setting-group">
+            <label class="setting-label">Display Name</label>
+            <input type="text" id="user-name-input" class="setting-select" placeholder="Enter your name..." style="padding:10px 14px;">
+            <div class="setting-hint">Shown on the dashboard welcome screen — make it yours</div>
+          </div>
+          <div class="setting-group">
+            <label class="setting-label">Vault Location</label>
+            <div class="setting-row">
+              <span id="vault-path-display" class="setting-value">Not set</span>
+              <button class="btn-sm" id="btn-change-vault">Change</button>
+            </div>
+          </div>
+          <div class="setting-group">
+            <label class="setting-label">Auto-save</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="auto-save-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+            <div class="setting-hint">Automatically save notes after 1 second of inactivity</div>
+          </div>
+          <div class="setting-group">
+            <label class="setting-label">Show file extensions</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="show-extensions" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-group">
+            <label class="setting-label">Confirm before delete</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="confirm-delete" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-group">
+            <label class="setting-label">Project Tab Mode</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="project-tab-mode">
+              <span class="toggle-slider"></span>
+            </label>
+            <div class="setting-hint">Only show tabs from current folder</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Time Format</label>
+            <select id="time-format-select" class="setting-select">
+              <option value="12">12-Hour (Standard)</option>
+              <option value="24">24-Hour (Military)</option>
+            </select>
+            <div class="setting-hint">Choose how time is displayed on the dashboard and clocks</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">UI Font Size</label>
+            <input type="range" id="ui-font-size-slider" min="11" max="16" step="1" value="13" class="setting-slider">
+            <span id="ui-font-size-label">13px</span>
+            <div class="setting-hint">Scale all interface text (sidebar, tabs, menus)</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Dashboard Scale</label>
+            <select id="dashboard-scale-select" class="setting-select">
+              <option value="default">Default</option>
+              <option value="large">Large</option>
+              <option value="xl">Extra Large</option>
+            </select>
+            <div class="setting-hint">Make dashboard widgets bigger and more readable</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Show Keyboard Shortcuts</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="show-shortcuts-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+            <div class="setting-hint">Display keyboard shortcut reference</div>
+          </div>
+        </div>
+
+        <!-- Widgets Tab -->
+        <div class="settings-panel" id="tab-widgets">
+          <div class="setting-group">
+            <label class="setting-label">Show Timezone Clocks</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="show-clocks-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div id="clock-settings">
+            <div class="clock-config" data-clock="0">
+              <input type="text" class="clock-label-input" placeholder="Label (e.g. New York)" value="Local">
+              <select class="clock-tz-select">
+                <option value="local" selected>Local Time</option>
+                <option value="UTC">UTC</option>
+                <option value="America/New_York">Eastern (NY)</option>
+                <option value="America/Chicago">Central (Chicago)</option>
+                <option value="America/Denver">Mountain (Denver)</option>
+                <option value="America/Los_Angeles">Pacific (LA)</option>
+                <option value="America/Anchorage">Alaska</option>
+                <option value="Pacific/Honolulu">Hawaii</option>
+                <option value="Europe/London">London</option>
+                <option value="Europe/Paris">Paris</option>
+                <option value="Asia/Dubai">Dubai</option>
+                <option value="Asia/Kolkata">Mumbai</option>
+                <option value="Asia/Singapore">Singapore</option>
+                <option value="Asia/Seoul">Seoul</option>
+                <option value="Asia/Tokyo">Tokyo</option>
+                <option value="Asia/Shanghai">Shanghai</option>
+                <option value="Australia/Sydney">Sydney</option>
+                <option value="America/Sao_Paulo">Sao Paulo</option>
+              </select>
+            </div>
+            <div class="clock-config" data-clock="1">
+              <input type="text" class="clock-label-input" placeholder="Label" value="EST">
+              <select class="clock-tz-select">
+                <option value="local">Local Time</option>
+                <option value="UTC">UTC</option>
+                <option value="America/New_York" selected>Eastern (NY)</option>
+                <option value="America/Chicago">Central (Chicago)</option>
+                <option value="America/Denver">Mountain (Denver)</option>
+                <option value="America/Los_Angeles">Pacific (LA)</option>
+                <option value="America/Anchorage">Alaska</option>
+                <option value="Pacific/Honolulu">Hawaii</option>
+                <option value="Europe/London">London</option>
+                <option value="Europe/Paris">Paris</option>
+                <option value="Asia/Dubai">Dubai</option>
+                <option value="Asia/Kolkata">Mumbai</option>
+                <option value="Asia/Singapore">Singapore</option>
+                <option value="Asia/Seoul">Seoul</option>
+                <option value="Asia/Tokyo">Tokyo</option>
+                <option value="Asia/Shanghai">Shanghai</option>
+                <option value="Australia/Sydney">Sydney</option>
+                <option value="America/Sao_Paulo">Sao Paulo</option>
+              </select>
+            </div>
+            <div class="clock-config" data-clock="2">
+              <input type="text" class="clock-label-input" placeholder="Label" value="PST">
+              <select class="clock-tz-select">
+                <option value="local">Local Time</option>
+                <option value="UTC">UTC</option>
+                <option value="America/New_York">Eastern (NY)</option>
+                <option value="America/Chicago">Central (Chicago)</option>
+                <option value="America/Denver">Mountain (Denver)</option>
+                <option value="America/Los_Angeles" selected>Pacific (LA)</option>
+                <option value="America/Anchorage">Alaska</option>
+                <option value="Pacific/Honolulu">Hawaii</option>
+                <option value="Europe/London">London</option>
+                <option value="Europe/Paris">Paris</option>
+                <option value="Asia/Dubai">Dubai</option>
+                <option value="Asia/Kolkata">Mumbai</option>
+                <option value="Asia/Singapore">Singapore</option>
+                <option value="Asia/Seoul">Seoul</option>
+                <option value="Asia/Tokyo">Tokyo</option>
+                <option value="Asia/Shanghai">Shanghai</option>
+                <option value="Australia/Sydney">Sydney</option>
+                <option value="America/Sao_Paulo">Sao Paulo</option>
+              </select>
+            </div>
+          </div>
+          <div class="setting-group" style="margin-top:16px;">
+            <label class="setting-label">Show Mini Calendar</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="show-calendar-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-group">
+            <label class="setting-label">Show XOS Logo Widget</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="show-logo-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-group">
+            <label class="setting-label">Show Quick Notes</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="show-sticky-notes-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-group">
+            <label class="setting-label">Show Quick Tasks</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="show-sticky-tasks-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ QUICK CAPTURE MODAL ═══ -->
+  <div id="quick-capture-modal" class="modal hidden">
+    <div class="modal-overlay"></div>
+    <div class="modal-content quick-capture-content">
+      <div class="modal-header">
+        <h2>Quick Capture</h2>
+        <button class="icon-btn modal-close" id="quick-capture-close">✕</button>
+      </div>
+      <textarea id="quick-capture-text" class="quick-capture-textarea" placeholder="Jot something down..."></textarea>
+      <div class="quick-capture-actions">
+        <button class="btn-sm" id="quick-capture-save-new">Save as New Note</button>
+        <button class="btn-sm btn-secondary" id="quick-capture-append">Append to Current</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SAVE AS MODAL ═══ -->
+  <div id="save-as-modal" class="modal hidden">
+    <div class="modal-overlay"></div>
+    <div class="modal-content save-as-content">
+      <div class="modal-header">
+        <h2 id="save-as-title">Save As</h2>
+        <button class="icon-btn modal-close" id="save-as-close">✕</button>
+      </div>
+      <div class="save-as-body">
+        <label class="setting-label">File Name</label>
+        <input type="text" id="save-as-name" class="save-as-input" placeholder="my-note" spellcheck="false">
+        <label class="setting-label" style="margin-top:14px;">Format</label>
+        <select id="save-as-format" class="setting-select">
+          <option value="md">Markdown (.md)</option>
+          <option value="txt">Plain Text (.txt)</option>
+          <option value="html">Web Page (.html)</option>
+          <option value="xml">XML Document (.xml)</option>
+          <option value="json">JSON (.json)</option>
+          <option value="pdf">PDF Document (.pdf)</option>
+        </select>
+        <div class="setting-hint" id="save-as-hint">Saves into your vault, next to the current note.</div>
+      </div>
+      <div class="quick-capture-actions">
+        <button class="btn-sm" id="save-as-confirm">Save</button>
+        <button class="btn-sm btn-secondary" id="save-as-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CONTEXT MENU ═══ -->
+  <div id="context-menu" class="context-menu hidden">
+    <div class="ctx-item" data-action="open">Open</div>
+    <div class="ctx-item" data-action="rename">Rename</div>
+    <div class="ctx-item" data-action="duplicate">Duplicate</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item ctx-file-only" data-action="save">Save</div>
+    <div class="ctx-item ctx-file-only" data-action="save-as">Save As...</div>
+    <div class="ctx-item ctx-file-only" data-action="save-copy">Save a Copy...</div>
+    <div class="ctx-sep ctx-file-only"></div>
+    <div class="ctx-item" data-action="star">Star / Unstar</div>
+    <div class="ctx-item" data-action="pin">Pin to Top</div>
+    <div class="ctx-item" data-action="color">Color Tag</div>
+    <div class="ctx-item" data-action="colortoggle">Toggle Color Style</div>
+    <div class="ctx-item ctx-submenu" data-action="blocksize">Block Size</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" data-action="icon">Change Icon</div>
+    <div class="ctx-item" data-action="explorer">Show in Explorer</div>
+    <div class="ctx-item" data-action="copy-path">Copy Path</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item ctx-danger" data-action="delete">Delete</div>
+  </div>
+
+  <!-- ═══ COLOR TAG PICKER ═══ -->
+  <div id="color-picker" class="color-picker hidden">
+    <button class="color-dot" data-color="" title="None" style="background:#555;position:relative;">
+      <span style="position:absolute;font-size:10px;">✕</span>
+    </button>
+    <button class="color-dot" data-color="#ef5350" title="Red" style="background:#ef5350;"></button>
+    <button class="color-dot" data-color="#ff9800" title="Orange" style="background:#ff9800;"></button>
+    <button class="color-dot" data-color="#fff176" title="Yellow" style="background:#fff176;"></button>
+    <button class="color-dot" data-color="#81c784" title="Green" style="background:#81c784;"></button>
+    <button class="color-dot" data-color="#4fc3f7" title="Blue" style="background:#4fc3f7;"></button>
+    <button class="color-dot" data-color="#ce93d8" title="Purple" style="background:#ce93d8;"></button>
+  </div>
+
+  <!-- ═══ BLOCK SIZE PICKER ═══ -->
+  <div id="blocksize-picker" class="blocksize-picker hidden">
+    <button class="blocksize-dot" data-size="xs" title="Extra Small">XS</button>
+    <button class="blocksize-dot" data-size="sm" title="Small">SM</button>
+    <button class="blocksize-dot" data-size="md" title="Medium">MD</button>
+    <button class="blocksize-dot" data-size="lg" title="Large">LG</button>
+    <button class="blocksize-dot" data-size="xl" title="Extra Large">XL</button>
+    <button class="blocksize-dot" data-size="xxl" title="XXL">XXL</button>
+    <button class="blocksize-dot" data-size="xxxl" title="XXXL">XXXL</button>
+  </div>
+
+  <!-- ═══ ICON PICKER ═══ -->
+  <div id="icon-picker" class="icon-picker hidden">
+    <button class="icon-option" data-icon="file" title="File">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+    </button>
+    <button class="icon-option" data-icon="folder" title="Folder">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+    </button>
+    <button class="icon-option" data-icon="star" title="Star">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+    </button>
+    <button class="icon-option" data-icon="dollar" title="Dollar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M8 12h8M12 8v8"></path></svg>
+    </button>
+    <button class="icon-option" data-icon="heart" title="Heart">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+    </button>
+    <button class="icon-option" data-icon="flag" title="Flag">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+    </button>
+    <button class="icon-option" data-icon="bookmark" title="Bookmark">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+    </button>
+    <button class="icon-option" data-icon="lightning" title="Lightning">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+    </button>
+    <button class="icon-option" data-icon="music" title="Music">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13a4 4 0 1 1-4 4"></path><circle cx="6" cy="18" r="3"></circle></svg>
+    </button>
+    <button class="icon-option" data-icon="code" title="Code">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+    </button>
+  </div>
+
+  <!-- ═══ WIDGETS BAR (bottom of left rail) ═══ -->
+  <div id="widgets-bar" class="widgets-bar">
+    <div class="widget-clocks" id="widget-clocks">
+      <div class="clock-widget" id="clock-0"><span class="clock-label">Local</span><span class="clock-time">--:--</span></div>
+      <div class="clock-widget" id="clock-1"><span class="clock-label">EST</span><span class="clock-time">--:--</span></div>
+      <div class="clock-widget" id="clock-2"><span class="clock-label">PST</span><span class="clock-time">--:--</span></div>
+    </div>
+    <div class="widget-calendar-block" id="widget-calendar-block">
+      <div class="widget-calendar-toggle-row" id="btn-toggle-widget-calendar" title="Collapse/Expand Calendar">
+        <span class="widget-calendar-toggle-label">Calendar</span>
+        <span class="widget-calendar-chevron" id="widget-calendar-chevron">▾</span>
+      </div>
+      <div class="widget-calendar" id="widget-calendar"></div>
+    </div>
+  </div>
+
+  <script src="utils/markdown.js"></script>
+  <script src="utils/changelog.js"></script>
+  <script src="utils/quotes.js"></script>
+  <script src="utils/app.js"></script>
+</body>
+</html>
