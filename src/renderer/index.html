@@ -402,7 +402,7 @@
       <div class="bottom-right">
         <button class="changelog-toggle-btn" id="btn-changelog" title="What's New">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-          <span id="changelog-version-label">v1.1.8</span>
+          <span id="changelog-version-label">v1.1.9</span>
           <span class="changelog-dot hidden" id="changelog-dot"></span>
         </button>
         <button class="changelog-toggle-btn" id="btn-creators" title="Creators">
@@ -1286,6 +1286,21 @@
         <span class="widget-calendar-chevron" id="widget-calendar-chevron">▾</span>
       </div>
       <div class="widget-calendar" id="widget-calendar"></div>
+    </div>
+  </div>
+
+  <!-- ═══ FIRST-LAUNCH ONBOARDING TOUR ═══ -->
+  <div id="onboarding-overlay" class="onboarding-overlay hidden">
+    <div class="onboarding-dim" id="onboarding-dim"></div>
+    <div class="onboarding-spotlight no-target" id="onboarding-spotlight"></div>
+    <div class="onboarding-tooltip centered" id="onboarding-tooltip">
+      <div class="onboarding-step-counter" id="onboarding-step-counter">Step 1 of 10</div>
+      <h3 class="onboarding-title" id="onboarding-title"></h3>
+      <p class="onboarding-body" id="onboarding-body"></p>
+      <div class="onboarding-actions">
+        <button class="btn-sm onboarding-skip-btn" id="btn-onboarding-skip">End Tutorial</button>
+        <button class="btn-primary onboarding-next-btn" id="btn-onboarding-next">Next</button>
+      </div>
     </div>
   </div>
 

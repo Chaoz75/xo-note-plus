@@ -4328,3 +4328,79 @@ body[data-ui-font-size="16"] { --ui-scale: 1.231; }
   color: var(--accent);
   font-weight: 700;
 }
+
+/* ═══ First-Launch Onboarding Tour ═══ */
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+}
+.onboarding-overlay.hidden { display: none; }
+.onboarding-dim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+}
+.onboarding-spotlight {
+  position: fixed;
+  border-radius: 10px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
+  border: 2px solid var(--accent);
+  z-index: 10000;
+  pointer-events: none;
+  opacity: 1;
+  transition: top 0.35s cubic-bezier(.4,0,.2,1), left 0.35s cubic-bezier(.4,0,.2,1),
+              width 0.35s cubic-bezier(.4,0,.2,1), height 0.35s cubic-bezier(.4,0,.2,1),
+              opacity 0.2s ease;
+}
+.onboarding-spotlight.no-target { opacity: 0; box-shadow: none; }
+.onboarding-tooltip {
+  position: fixed;
+  width: 300px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: 14px;
+  padding: 18px 20px;
+  box-shadow: var(--shadow), 0 0 40px var(--accent-dim);
+  z-index: 10001;
+  transition: top 0.35s cubic-bezier(.4,0,.2,1), left 0.35s cubic-bezier(.4,0,.2,1);
+}
+.onboarding-tooltip.centered {
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%);
+  width: 360px;
+  text-align: center;
+}
+.onboarding-step-counter {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0.8;
+  margin-bottom: 8px;
+}
+.onboarding-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: var(--text-primary);
+}
+.onboarding-body {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin: 0 0 18px;
+}
+.onboarding-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.onboarding-tooltip.centered .onboarding-actions { justify-content: center; }
+.onboarding-skip-btn { opacity: 0.7; }
+.onboarding-skip-btn:hover { opacity: 1; }
+.onboarding-next-btn { flex: 1; max-width: 140px; }
+.onboarding-tooltip.centered .onboarding-next-btn { max-width: 200px; }

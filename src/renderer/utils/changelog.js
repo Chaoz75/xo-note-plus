@@ -9,6 +9,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.1.9',
+    date: '2026-07-09',
+    changes: [
+      'New: a first-launch welcome tour. The very first time someone opens XO NOTE+ (right after picking a vault), a short guided tour lights up the sidebar, Quick Note, the home dashboard, Settings, Appearance, Widgets, and the bottom-right bar one at a time with a spotlight and a short explanation.',
+      'Every step has both a "Next" and an "End Tutorial" button, so it can be skipped at any point. The last step says goodbye with "I hope you enjoy the app!"',
+      'This only ever auto-plays once — existing users won\'t see it pop up on update, and it won\'t show again after it\'s been seen or skipped.'
+    ]
+  },
+  {
     version: '1.1.8',
     date: '2026-07-09',
     changes: [

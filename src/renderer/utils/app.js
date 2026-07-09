@@ -94,6 +94,7 @@ const App = {
     leftRailWidth: 200,
     showKeyboardShortcuts: true,
     autoUpdateEnabled: true,
+    hasSeenOnboarding: false,
     showStickyNotes: true,
     showStickyTasks: true,
     dashboardColorLink: false,
@@ -115,6 +116,181 @@ const App = {
     this._saveTimer = setTimeout(() => { this._saveTimer = null; this.saveSettings(); }, 500);
   },
   contextTarget: null,
+
+  // ── First-Launch Onboarding Tour ──
+  _onboardingIndex: 0,
+  onboardingSteps: [
+    {
+      title: 'Welcome to XO NOTE+',
+      body: 'A quick tour before you dive in — just a few short steps to show you around. Click "End Tutorial" anytime to skip.',
+      target: null
+    },
+    {
+      title: 'Your Notes',
+      body: 'Spaces, Starred, and Recent live in the icon rail, and your file tree sits right here. Everything you write is organized from this panel.',
+      target: '#file-panel',
+      dashboard: true
+    },
+    {
+      title: 'Quick Note',
+      body: 'Click Quick Note anytime to instantly create and open a new note — no naming dialog, just start typing.',
+      target: '#btn-quick-note',
+      dashboard: true
+    },
+    {
+      title: 'Your Home Screen',
+      body: 'This is your dashboard — a live calendar and clocks greet you here whenever you don’t have a note open.',
+      target: '.dashboard-widgets',
+      dashboard: true
+    },
+    {
+      title: 'Make It Yours',
+      body: 'Unlock the layout (🔒) to drag these widgets wherever you like, or hit ↺ anytime to reset the dashboard back to default.',
+      target: '.dashboard-controls',
+      dashboard: true
+    },
+    {
+      title: 'Settings',
+      body: 'Everything about how XO NOTE+ looks and behaves lives here — themes, fonts, widgets, and more.',
+      target: '#btn-settings',
+      dashboard: true
+    },
+    {
+      title: 'Themes & Appearance',
+      body: 'Pick from built-in themes, or scroll down to the Custom Theme Builder to design your own colors, gradients, and accent glow.',
+      target: '#theme-grid',
+      settingsTab: 'appearance'
+    },
+    {
+      title: 'Widgets',
+      body: 'Show or hide the calendar and timezone clocks, and customize each clock’s label and timezone from here.',
+      target: '#tab-widgets',
+      settingsTab: 'widgets'
+    },
+    {
+      title: 'What’s New & Support',
+      body: 'Check for updates, read the changelog, meet the Creators, or report a bug — all from this corner.',
+      target: '.bottom-right',
+      closeSettings: true
+    },
+    {
+      title: 'You’re all set!',
+      body: 'I hope you enjoy the app!',
+      target: null,
+      finish: true
+    }
+  ],
+
+  startOnboardingTour() {
+    this._onboardingIndex = 0;
+    const overlay = document.getElementById('onboarding-overlay');
+    if (!overlay) return;
+    overlay.classList.remove('hidden');
+    this._renderOnboardingStep();
+    if (!this._onboardingResizeBound) {
+      this._onboardingResizeBound = true;
+      window.addEventListener('resize', () => {
+        const ov = document.getElementById('onboarding-overlay');
+        if (ov && !ov.classList.contains('hidden')) this._repositionOnboardingStep();
+      });
+    }
+  },
+
+  _renderOnboardingStep() {
+    const steps = this.onboardingSteps;
+    const i = this._onboardingIndex;
+    const step = steps[i];
+    if (!step) { this.endOnboardingTour(); return; }
+
+    if (step.dashboard) this.showDashboard();
+
+    const modal = document.getElementById('settings-modal');
+    if (step.settingsTab) {
+      if (modal) modal.classList.remove('hidden');
+      this._switchSettingsTabProgrammatic(step.settingsTab);
+    } else if (step.closeSettings) {
+      if (modal) modal.classList.add('hidden');
+    }
+
+    const counter = document.getElementById('onboarding-step-counter');
+    const titleEl = document.getElementById('onboarding-title');
+    const bodyEl = document.getElementById('onboarding-body');
+    const nextBtn = document.getElementById('btn-onboarding-next');
+
+    if (counter) counter.textContent = 'Step ' + (i + 1) + ' of ' + steps.length;
+    if (titleEl) titleEl.textContent = step.title;
+    if (bodyEl) bodyEl.textContent = step.body;
+    if (nextBtn) nextBtn.textContent = step.finish ? 'Finish' : 'Next';
+
+    requestAnimationFrame(() => this._repositionOnboardingStep());
+  },
+
+  _switchSettingsTabProgrammatic(tabName) {
+    document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+    const tabBtn = document.querySelector('.settings-tab[data-tab="' + tabName + '"]');
+    const panel = document.getElementById('tab-' + tabName);
+    if (tabBtn) tabBtn.classList.add('active');
+    if (panel) panel.classList.add('active');
+  },
+
+  _repositionOnboardingStep() {
+    const step = this.onboardingSteps[this._onboardingIndex];
+    const spotlight = document.getElementById('onboarding-spotlight');
+    const tooltip = document.getElementById('onboarding-tooltip');
+    const dim = document.getElementById('onboarding-dim');
+    if (!step || !spotlight || !tooltip) return;
+
+    const target = step.target ? document.querySelector(step.target) : null;
+
+    if (!target) {
+      // No real UI element to point at — dim the whole screen behind a centered card
+      spotlight.classList.add('no-target');
+      tooltip.classList.add('centered');
+      if (dim) dim.classList.remove('hidden');
+      return;
+    }
+
+    // Pointing at a real element — the spotlight box itself does the dimming
+    // (box-shadow cutout), so the flat full-screen dim would just double-darken
+    // the target and needs to stay off.
+    if (dim) dim.classList.add('hidden');
+    const rect = target.getBoundingClientRect();
+    const pad = 8;
+    spotlight.classList.remove('no-target');
+    tooltip.classList.remove('centered');
+    spotlight.style.top = (rect.top - pad) + 'px';
+    spotlight.style.left = (rect.left - pad) + 'px';
+    spotlight.style.width = (rect.width + pad * 2) + 'px';
+    spotlight.style.height = (rect.height + pad * 2) + 'px';
+
+    const tw = tooltip.offsetWidth || 300;
+    const th = tooltip.offsetHeight || 180;
+    let top = rect.bottom + pad + 12;
+    let left = rect.left;
+    if (top + th > window.innerHeight - 10) top = rect.top - th - 12;
+    if (top < 10) top = 10;
+    if (left + tw > window.innerWidth - 10) left = window.innerWidth - tw - 10;
+    if (left < 10) left = 10;
+    tooltip.style.top = top + 'px';
+    tooltip.style.left = left + 'px';
+  },
+
+  nextOnboardingStep() {
+    const step = this.onboardingSteps[this._onboardingIndex];
+    if (step && step.finish) { this.endOnboardingTour(); return; }
+    this._onboardingIndex++;
+    this._renderOnboardingStep();
+  },
+
+  endOnboardingTour() {
+    const overlay = document.getElementById('onboarding-overlay');
+    if (overlay) overlay.classList.add('hidden');
+    const modal = document.getElementById('settings-modal');
+    if (modal) modal.classList.add('hidden');
+    this.settings.hasSeenOnboarding = true;
+    this.saveSettings();
+  },
 
   // ── Init ──
   async init() {
@@ -157,6 +333,11 @@ const App = {
       this.showDashboard();
     }
 
+    // First-launch welcome tour — only ever auto-plays once
+    if (this.vaultPath && !this.settings.hasSeenOnboarding) {
+      setTimeout(() => this.startOnboardingTour(), 400);
+    }
+
     // ── Files opened from Windows (double-click / "Open with") ──
     // Pushed while the app is running (single-instance hand-off)
     if (window.xo.onOpenFilePath) {
@@ -182,7 +363,14 @@ const App = {
   async loadSettings() {
     try {
       const config = await window.xo.loadConfig();
+      // Had settings saved before this launch — i.e. an existing user, not a fresh install
+      const isExistingUser = !!config.settings;
       if (config.settings) this.settings = { ...this.settings, ...config.settings };
+      if (isExistingUser && config.settings.hasSeenOnboarding === undefined) {
+        // Upgrading from a version that predates the welcome tour — don't
+        // retroactively show it to people who are already using the app.
+        this.settings.hasSeenOnboarding = true;
+      }
       if (config.starred) this.starred = config.starred;
       if (config.recentFiles) this.recentFiles = config.recentFiles;
       if (config.colorTags) this.colorTags = config.colorTags;
@@ -5028,6 +5216,12 @@ const App = {
     const bugBtn = document.getElementById('btn-report-bug');
     if (bugBtn) bugBtn.addEventListener('click', () => this.reportBug());
 
+    // First-launch onboarding tour
+    const obNext = document.getElementById('btn-onboarding-next');
+    if (obNext) obNext.addEventListener('click', () => this.nextOnboardingStep());
+    const obSkip = document.getElementById('btn-onboarding-skip');
+    if (obSkip) obSkip.addEventListener('click', () => this.endOnboardingTour());
+
     // Update picker modal
     const upClose = document.getElementById('btn-update-picker-close');
     if (upClose) upClose.addEventListener('click', () => this.closeUpdatePicker());
@@ -5050,6 +5244,9 @@ const App = {
         await this.loadFileTree();
         this.applySettings();
         this.showDashboard();
+        if (!this.settings.hasSeenOnboarding) {
+          setTimeout(() => this.startOnboardingTour(), 400);
+        }
       }
     });
 
