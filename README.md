@@ -1,4 +1,3 @@
-[README.md](https://github.com/user-attachments/files/29868985/README.md)
 # XO NOTE+
 
 A premium local markdown workspace by **XO Systems** — fast, private, and fully under your control. Everything lives in a vault on your own machine: no cloud, no accounts, no syncing your notes to someone else's server.
