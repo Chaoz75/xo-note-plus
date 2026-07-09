@@ -24,7 +24,8 @@ XO NOTE+ is a desktop note-taking app built around a simple idea: writing softwa
 
 | | |
 |---|---|
-| ![Home Dashboard](screenshots/dashboard-dark.png) | ![Home Dashboard — Crimson theme](screenshots/dashboard-crimson.png) |
+| ![Home Dashboard](screenshots/dashboar![Uploading Screenshot 2026-07-09 191746.png…]()
+d-dark.png) | ![Home Dashboard — Crimson theme](<img width="2559" height="1439" alt="Screenshot 2026-07-09 191923" src="https://github.com/user-attachments/assets/ee5bde62-b331-4901-b012-9e44bdda6e3d" />) |
 | ![Home Dashboard — Solar theme](screenshots/dashboard-solar.png) | ![Editor with Creators panel](screenshots/editor-creators.png) |
 
 ![Appearance Settings — themes and accent controls](screenshots/appearance-settings.png)
