@@ -1,7 +1,10 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const https = require('https');
+const { spawn } = require('child_process');
 const { autoUpdater } = require('electron-updater');
+const pkg = require('../../package.json');
 
 let mainWindow;
 let vaultPath = null;
@@ -21,7 +24,14 @@ const CONFIG_PATH = path.join(app.getPath('userData'), 'xonote-config.json');
 // machine that published the release.
 const GH_TOKEN = process.env.GH_TOKEN || ''; // <-- put your token here for local testing if you don't want to set an env var
 
-autoUpdater.autoDownload = true;
+const GH_PUBLISH_CFG = (pkg.build && pkg.build.publish && pkg.build.publish[0]) || {};
+const GH_OWNER = GH_PUBLISH_CFG.owner || '';
+const GH_REPO = GH_PUBLISH_CFG.repo || '';
+
+// autoDownload is OFF: we show the user a choice (Update to Latest / Choose
+// Other Version) before anything downloads, instead of silently grabbing
+// the latest version the moment one is found.
+autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = false; // we prompt the user via the bottom-right button instead of installing silently on quit
 if (GH_TOKEN) {
   autoUpdater.requestHeaders = { Authorization: 'token ' + GH_TOKEN };
@@ -34,7 +44,7 @@ function sendUpdateStatus(status, extra) {
 }
 
 autoUpdater.on('checking-for-update', () => sendUpdateStatus('checking'));
-autoUpdater.on('update-available', (info) => sendUpdateStatus('downloading', { version: info.version, percent: 0 }));
+autoUpdater.on('update-available', (info) => sendUpdateStatus('available', { version: info.version, notes: info.releaseNotes || '' }));
 autoUpdater.on('update-not-available', () => sendUpdateStatus('up-to-date'));
 autoUpdater.on('download-progress', (p) => sendUpdateStatus('downloading', { percent: Math.round(p.percent) }));
 autoUpdater.on('update-downloaded', (info) => sendUpdateStatus('ready', { version: info.version }));
@@ -48,6 +58,90 @@ function checkForUpdatesSafely() {
   // `npm start` in dev) — skip in that case instead of erroring every time.
   if (!app.isPackaged) return;
   try { autoUpdater.checkForUpdates(); } catch (e) { console.error('checkForUpdates failed:', e); }
+}
+
+// Only the SCHEDULED (launch + hourly) checks respect the "Auto Update"
+// settings toggle — a manual "check now" click always works regardless,
+// since that's an explicit ask from the user in the moment.
+function checkForUpdatesIfEnabled() {
+  const cfg = loadConfig();
+  // The toggle lives under the renderer's settings object (saved via
+  // saveConfig({ settings: {...} })), not at the config's top level.
+  const settings = cfg.settings || {};
+  if (settings.autoUpdateEnabled === false) return;
+  checkForUpdatesSafely();
+}
+
+// ── GitHub API helper (used for listing releases + downloading a specific
+// non-latest version's installer — electron-updater itself only ever
+// targets "latest", so anything else needs a direct API call). ──
+function githubApiRequest(urlPath, extraHeaders) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'api.github.com',
+      path: urlPath,
+      headers: {
+        'User-Agent': 'xo-note-plus',
+        Accept: 'application/vnd.github+json',
+        ...(GH_TOKEN ? { Authorization: 'token ' + GH_TOKEN } : {}),
+        ...(extraHeaders || {})
+      }
+    };
+    https.get(options, (res) => {
+      let data = [];
+      res.on('data', (chunk) => data.push(chunk));
+      res.on('end', () => {
+        const buf = Buffer.concat(data);
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve({ statusCode: res.statusCode, headers: res.headers, body: buf });
+        } else {
+          reject(new Error('GitHub API ' + res.statusCode + ' for ' + urlPath));
+        }
+      });
+    }).on('error', reject);
+  });
+}
+
+// Downloads a URL following redirects (GitHub asset downloads 302 to a
+// signed storage URL), reporting progress back to the renderer.
+function downloadWithRedirects(url, destPath, headers) {
+  return new Promise((resolve, reject) => {
+    const request = (u, hdrs) => {
+      https.get(u, { headers: hdrs }, (res) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          // Redirects to signed storage URLs shouldn't carry our auth header
+          request(res.headers.location, { 'User-Agent': 'xo-note-plus' });
+          return;
+        }
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          reject(new Error('Download failed with status ' + res.statusCode));
+          return;
+        }
+        const total = parseInt(res.headers['content-length'] || '0', 10);
+        let received = 0;
+        const file = fs.createWriteStream(destPath);
+        res.on('data', (chunk) => {
+          received += chunk.length;
+          const percent = total ? Math.round((received / total) * 100) : 0;
+          sendManualDownloadProgress(percent);
+        });
+        res.pipe(file);
+        file.on('finish', () => file.close(() => resolve(destPath)));
+        file.on('error', reject);
+      }).on('error', reject);
+    };
+    request(url, {
+      'User-Agent': 'xo-note-plus',
+      Accept: 'application/octet-stream',
+      ...(headers || {})
+    });
+  });
+}
+
+function sendManualDownloadProgress(percent) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('download-progress-manual', { percent });
+  }
 }
 
 // ── Single instance + "Open with XO NOTE+" support ──
@@ -127,8 +221,8 @@ function createWindow() {
 
   // Check shortly after launch (let the window finish loading first), then
   // periodically while the app stays open.
-  setTimeout(checkForUpdatesSafely, 4000);
-  setInterval(checkForUpdatesSafely, 60 * 60 * 1000);
+  setTimeout(checkForUpdatesIfEnabled, 4000);
+  setInterval(checkForUpdatesIfEnabled, 60 * 60 * 1000);
 }
 
 app.whenReady().then(createWindow);
@@ -449,9 +543,78 @@ ipcMain.handle('file-exists', async (event, filePath) => {
 
 ipcMain.handle('get-app-version', () => app.getVersion());
 
-// Auto-update: manual "check now" click + "restart to install" click
+// Auto-update: manual "check now" click + "restart to install" click.
+// Manual checks always run, regardless of the "Auto Update" settings toggle
+// (that toggle only silences the automatic launch/hourly checks).
 ipcMain.handle('check-for-updates', () => { checkForUpdatesSafely(); });
 ipcMain.handle('quit-and-install', () => { autoUpdater.quitAndInstall(); });
+
+// User picked "Update to Latest Version" in the picker — now actually
+// download it (autoDownload is off, so nothing happened until this call).
+ipcMain.handle('start-download-latest', () => {
+  try { autoUpdater.downloadUpdate(); } catch (e) { console.error('downloadUpdate failed:', e); }
+});
+
+// List every published (non-draft, non-prerelease-hidden) release so the
+// "Choose Other Version" picker can show the full history, including
+// versions older than what's currently installed.
+ipcMain.handle('list-releases', async () => {
+  if (!GH_OWNER || !GH_REPO) return [];
+  try {
+    const res = await githubApiRequest('/repos/' + GH_OWNER + '/' + GH_REPO + '/releases?per_page=30');
+    const releases = JSON.parse(res.body.toString('utf-8'));
+    return releases
+      .filter(r => !r.draft)
+      .map(r => {
+        const exeAsset = (r.assets || []).find(a => a.name.toLowerCase().endsWith('.exe'));
+        return {
+          version: (r.tag_name || '').replace(/^v/, ''),
+          tagName: r.tag_name,
+          name: r.name,
+          notes: r.body || '',
+          publishedAt: r.published_at,
+          prerelease: !!r.prerelease,
+          assetId: exeAsset ? exeAsset.id : null,
+          assetName: exeAsset ? exeAsset.name : null,
+          assetSize: exeAsset ? exeAsset.size : null
+        };
+      })
+      .filter(r => r.assetId); // only versions that actually have a downloadable installer
+  } catch (e) {
+    console.error('list-releases failed:', e);
+    return [];
+  }
+});
+
+// Download a SPECIFIC (not necessarily latest) version's installer asset
+// directly via the GitHub API, since electron-updater's delta-update
+// mechanism only ever targets the newest release.
+ipcMain.handle('download-specific-version', async (event, assetId, version) => {
+  if (!GH_OWNER || !GH_REPO || !assetId) return null;
+  try {
+    const destPath = path.join(app.getPath('temp'), 'xo-note-plus-setup-' + version + '.exe');
+    const assetApiUrl = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/releases/assets/' + assetId;
+    await downloadWithRedirects(assetApiUrl, destPath, {
+      Accept: 'application/octet-stream',
+      ...(GH_TOKEN ? { Authorization: 'token ' + GH_TOKEN } : {})
+    });
+    return destPath;
+  } catch (e) {
+    console.error('download-specific-version failed:', e);
+    return null;
+  }
+});
+
+// Launch a downloaded installer (from download-specific-version) and quit
+// so it can replace the running app, same as a normal update install.
+ipcMain.handle('install-downloaded-file', (event, filePath) => {
+  try {
+    if (!filePath || !fs.existsSync(filePath)) return false;
+    spawn(filePath, [], { detached: true, stdio: 'ignore' }).unref();
+    setTimeout(() => app.quit(), 500);
+    return true;
+  } catch (e) { console.error('install-downloaded-file failed:', e); return false; }
+});
 
 // Custom background image (Settings > Appearance): pick an image and copy
 // it into userData so it keeps working even if the original file moves.
@@ -490,6 +653,39 @@ ipcMain.handle('clear-background-image', async () => {
     }
     return true;
   } catch (e) { return false; }
+});
+
+// Custom Theme import/export (Settings > Appearance > Custom Theme Builder)
+// so a theme built in one install of XO NOTE+ can be shared/reused elsewhere.
+ipcMain.handle('export-theme-file', async (event, themeJson) => {
+  const result = await dialog.showSaveDialog(mainWindow, {
+    title: 'Export Custom Theme',
+    defaultPath: 'xo-note-theme.json',
+    filters: [{ name: 'XO NOTE+ Theme', extensions: ['json'] }]
+  });
+  if (result.canceled || !result.filePath) return false;
+  try {
+    fs.writeFileSync(result.filePath, themeJson, 'utf-8');
+    return true;
+  } catch (e) {
+    console.error('Export theme error:', e);
+    return false;
+  }
+});
+
+ipcMain.handle('import-theme-file', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'Import Custom Theme',
+    properties: ['openFile'],
+    filters: [{ name: 'XO NOTE+ Theme', extensions: ['json'] }]
+  });
+  if (result.canceled || !result.filePaths[0]) return null;
+  try {
+    return fs.readFileSync(result.filePaths[0], 'utf-8');
+  } catch (e) {
+    console.error('Import theme error:', e);
+    return null;
+  }
 });
 
 ipcMain.handle('get-path-sep', () => path.sep);

@@ -9,6 +9,67 @@
 
 const CHANGELOG = [
   {
+    version: '1.1.7',
+    date: '2026-07-09',
+    changes: [
+      'Changed: publishing an update now goes fully live on GitHub the moment PUBLISH-UPDATE.bat finishes, instead of landing as a draft that needed a manual "Publish release" click. Double-check the version and changelog entry before running the publish script, since there is no review step left before it ships.',
+      'The auto-merge step (added last version) now correctly handles this — if GitHub still splits the upload across a published release and a leftover draft, the leftover\'s files are merged into the published release and the empty draft is deleted, without ever touching or removing anything already published.',
+      'This is a publishing-workflow change only — nothing changes for people installing or using the app.'
+    ]
+  },
+  {
+    version: '1.1.6',
+    date: '2026-07-09',
+    changes: [
+      'Added: PUBLISH-UPDATE.bat now automatically detects when GitHub has split a release into more than one draft (the setup .exe, .blockmap, and latest.yml landing in separate drafts) and merges everything back into a single release, deleting the leftover empty duplicate — no more manually dragging files between drafts.',
+      'This is a publishing-workflow change only (scripts/merge-split-release.js) — nothing changes for people installing or using the app.'
+    ]
+  },
+  {
+    version: '1.1.5',
+    date: '2026-07-09',
+    changes: [
+      'Added: "Report a Bug" button at the bottom-right, next to Creators and the update status — opens a pre-filled GitHub Issue.',
+      'Added: Export/Import for your Custom Theme (Settings > Appearance > Custom Theme Builder) — save it to a file to share it or reuse it on another install, or load one someone shared with you.',
+      'Changed: Chaoz\'s Creators card now links straight to github.com/Chaoz75 instead of showing "Soon". Role labels updated — Chaoz is now "Help Programmer", XORAYDEN is now "Founder / Creator of XO NOTE+". Removed the Instagram placeholder for XORAYDEN for now.',
+      'Changed: "Quick Note" in the left rail no longer stops to ask for a title — it now creates and opens a new note instantly (auto-named "Untitled Note", "Untitled Note 2", etc.) so it\'s actually quick.',
+      'Changed: moved Accent Color, Accent Brightness, Accent Outline Color, and Accent Gradient up in Settings > Appearance, right under the Theme grid, so they\'re easier to find. Added a live preview box showing your accent settings applied to a sample button, outline, and text.',
+      'Fixed: in the Custom Theme Builder, picking a bright/highly saturated Color 1 (e.g. pure yellow or red) while Background Style was set to Gradient could make the app\'s box surfaces (calendar, panels, cards) collapse into one flat, nearly solid color instead of showing the intended layered depth. The shading math now works in perceptual lightness instead of raw color channels, so this stays smooth for any color choice.',
+      'Fixed: the left/right sidebar collapse arrows visibly lagged behind the panel for a moment on every collapse/expand click, since the arrow was animating its position over ~200ms while the panel itself snaps instantly — the arrow now snaps into place together with the panel.'
+    ]
+  },
+  {
+    version: '1.1.4',
+    date: '2026-07-09',
+    changes: [
+      'Added: a proprietary "All Rights Reserved" LICENSE for XO NOTE+, covering both the GitHub repo and the app itself — copyright XO Systems, 2026.',
+      'Added: the Windows installer now shows a license agreement screen (you have to click "I Agree" before Setup continues).'
+    ]
+  },
+  {
+    version: '1.1.3',
+    date: '2026-07-09',
+    changes: [
+      "Added: when an update is found, you now get to choose — \"Update to Latest Version\" (shows the changelog first, then downloads and asks to restart) or \"Choose Other Version\" (browse every released version, including older ones, and install any one of them).",
+      'Added: "Auto Update" toggle in Settings > General. Turn it off to stop the automatic checks on launch and every hour — the bottom-right button still checks on demand whenever you click it.',
+      'Changed: PUBLISH-UPDATE.bat now auto-fills the GitHub release notes from the matching changelog.js entry, so the release description on GitHub is written for you instead of needing to be typed in by hand.'
+    ]
+  },
+  {
+    version: '1.1.2',
+    date: '2026-07-09',
+    changes: [
+      'Changed: PUBLISH-UPDATE.bat now creates and pushes a git tag (e.g. v1.1.2) before publishing to GitHub, to help prevent the release from getting split across multiple drafts. If it still splits occasionally, the fix is still the same: merge the missing file into one draft, delete the other, then publish.'
+    ]
+  },
+  {
+    version: '1.1.1',
+    date: '2026-07-09',
+    changes: [
+      'Added: PUBLISH-UPDATE.bat, a one-click script next to BUILD-INSTALLER.bat that runs the GitHub publish step for you instead of typing the npm command by hand.'
+    ]
+  },
+  {
     version: '1.1.0',
     date: '2026-07-09',
     changes: [

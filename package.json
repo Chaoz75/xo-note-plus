@@ -1,6 +1,6 @@
 {
   "name": "xo-note-plus",
-  "version": "1.1.0",
+  "version": "1.1.7",
   "description": "XO NOTE+ — A premium local markdown workspace by XO Systems",
   "main": "src/main/main.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "dev": "electron . --dev"
   },
   "author": "XO Systems",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "devDependencies": {
     "electron": "^28.1.0",
     "electron-builder": "^26.15.3"
@@ -36,14 +36,16 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "installerIcon": "src/renderer/assets/icon.ico"
+      "installerIcon": "src/renderer/assets/icon.ico",
+      "license": "LICENSE.txt"
     },
     "publish": [
       {
         "provider": "github",
         "owner": "Chaoz75",
         "repo": "xo-note-plus",
-        "private": true
+        "private": true,
+        "releaseType": "release"
       }
     ]
   }

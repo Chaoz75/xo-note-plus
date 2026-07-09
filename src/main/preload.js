@@ -23,6 +23,8 @@ contextBridge.exposeInMainWorld('xo', {
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
   selectBackgroundImage: () => ipcRenderer.invoke('select-background-image'),
   clearBackgroundImage: () => ipcRenderer.invoke('clear-background-image'),
+  exportThemeFile: (themeJson) => ipcRenderer.invoke('export-theme-file', themeJson),
+  importThemeFile: () => ipcRenderer.invoke('import-theme-file'),
   onOpenFilePath: (callback) => ipcRenderer.on('open-file-path', (e, p) => callback(p)),
   ensureDirectory: (dirPath) => ipcRenderer.invoke('ensure-directory', dirPath),
   fileExists: (filePath) => ipcRenderer.invoke('file-exists', filePath),
@@ -53,6 +55,11 @@ contextBridge.exposeInMainWorld('xo', {
   // Auto-update
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
   quitAndInstall: () => ipcRenderer.invoke('quit-and-install'),
-  onUpdateStatus: (callback) => ipcRenderer.on('update-status', (e, data) => callback(data))
+  onUpdateStatus: (callback) => ipcRenderer.on('update-status', (e, data) => callback(data)),
+  startDownloadLatest: () => ipcRenderer.invoke('start-download-latest'),
+  listReleases: () => ipcRenderer.invoke('list-releases'),
+  downloadSpecificVersion: (assetId, version) => ipcRenderer.invoke('download-specific-version', assetId, version),
+  installDownloadedFile: (filePath) => ipcRenderer.invoke('install-downloaded-file', filePath),
+  onManualDownloadProgress: (callback) => ipcRenderer.on('download-progress-manual', (e, data) => callback(data))
 });
 // XO NOTE+ preload — exposes safe IPC bridge to renderer

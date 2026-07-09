@@ -402,7 +402,7 @@
       <div class="bottom-right">
         <button class="changelog-toggle-btn" id="btn-changelog" title="What's New">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-          <span id="changelog-version-label">v1.1.0</span>
+          <span id="changelog-version-label">v1.1.7</span>
           <span class="changelog-dot hidden" id="changelog-dot"></span>
         </button>
         <button class="changelog-toggle-btn" id="btn-creators" title="Creators">
@@ -412,6 +412,10 @@
         <button class="changelog-toggle-btn" id="btn-update-status" title="Check for Updates">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
           <span id="update-status-label">You're up to Date!</span>
+        </button>
+        <button class="changelog-toggle-btn" id="btn-report-bug" title="Report a Bug">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="6" width="8" height="12" rx="4"></rect><path d="M12 2v4M8 9H4M8 14H3M8 18l-3 2M16 9h4M16 14h5M16 18l3 2M10 6V4a2 2 0 0 1 4 0v2"></path></svg>
+          <span>Report a Bug</span>
         </button>
         <span id="word-count">0 words</span>
         <span id="char-count">0 chars</span>
@@ -438,26 +442,55 @@
           <img class="creator-avatar" src="assets/creators/chaoz.jpg" alt="Chaoz">
           <div class="creator-info">
             <span class="creator-name">Chaoz</span>
-            <span class="creator-role">Help Maker / Coder</span>
+            <span class="creator-role">Help Programmer</span>
           </div>
-          <span class="creator-contact" data-platform="GitHub">
+          <a class="creator-contact" id="creator-contact-chaoz" data-platform="GitHub" href="https://github.com/Chaoz75" title="github.com/Chaoz75">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.73.5.98 5.24.98 11.52c0 5.02 3.26 9.28 7.77 10.78.57.1.78-.25.78-.55 0-.27-.01-1-.02-1.96-3.16.69-3.83-1.52-3.83-1.52-.52-1.31-1.26-1.66-1.26-1.66-1.03-.7.08-.69.08-.69 1.14.08 1.74 1.17 1.74 1.17 1.01 1.73 2.65 1.23 3.3.94.1-.73.4-1.23.72-1.51-2.52-.29-5.17-1.26-5.17-5.6 0-1.24.44-2.25 1.17-3.04-.12-.29-.51-1.45.11-3.02 0 0 .96-.31 3.15 1.16a10.9 10.9 0 0 1 5.73 0c2.19-1.47 3.15-1.16 3.15-1.16.62 1.57.23 2.73.11 3.02.73.79 1.17 1.8 1.17 3.04 0 4.35-2.65 5.31-5.18 5.59.41.35.77 1.04.77 2.11 0 1.52-.01 2.75-.01 3.12 0 .3.2.66.79.55A11.03 11.03 0 0 0 23.02 11.5C23.02 5.24 18.27.5 12 .5z"/></svg>
             <span class="creator-contact-label">GitHub</span>
-            <span class="creator-contact-tooltip">Soon</span>
-          </span>
+          </a>
         </div>
         <div class="creator-card">
           <img class="creator-avatar" src="assets/creators/xorayden.png" alt="XORAYDEN">
           <div class="creator-info">
             <span class="creator-name">XORAYDEN</span>
-            <span class="creator-role">Maker</span>
+            <span class="creator-role">Founder / Creator of XO NOTE+</span>
           </div>
-          <span class="creator-contact" data-platform="Instagram">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"></circle></svg>
-            <span class="creator-contact-label">Instagram</span>
-            <span class="creator-contact-tooltip">Soon</span>
-          </span>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ UPDATE PICKER MODAL ═══ -->
+  <div id="update-picker-modal" class="modal hidden">
+    <div class="modal-overlay"></div>
+    <div class="modal-content update-picker-content">
+      <div class="modal-header">
+        <h2>Update Available</h2>
+        <button class="icon-btn" id="btn-update-picker-close">✕</button>
+      </div>
+
+      <!-- Choice view: Update to Latest vs Choose Other Version -->
+      <div class="update-picker-body" id="update-picker-choice-view">
+        <p class="update-picker-lead">A new version is available: <strong id="update-picker-latest-version">—</strong></p>
+        <div class="update-picker-notes-box" id="update-picker-latest-notes"></div>
+        <div class="update-picker-actions">
+          <button class="btn-primary" id="btn-update-to-latest">Update to Latest Version</button>
+          <button class="btn-sm btn-secondary" id="btn-choose-other-version">Choose Other Version</button>
+        </div>
+      </div>
+
+      <!-- Version list view -->
+      <div class="update-picker-body hidden" id="update-picker-list-view">
+        <button class="btn-sm btn-secondary" id="btn-back-to-choice">&larr; Back</button>
+        <div class="update-picker-version-list" id="update-picker-version-list">
+          <p class="sidebar-empty">Loading versions...</p>
+        </div>
+      </div>
+
+      <!-- Download/install progress view -->
+      <div class="update-picker-body hidden" id="update-picker-progress-view">
+        <p id="update-picker-progress-label">Downloading...</p>
+        <div class="update-progress-track"><div class="update-progress-fill" id="update-picker-progress-fill"></div></div>
       </div>
     </div>
   </div>
@@ -594,6 +627,65 @@
             </div>
           </div>
 
+          <!-- Accent settings sit right under the Theme grid so they're easy to spot -->
+          <div class="setting-group">
+            <label class="setting-label">Accent Color</label>
+            <div class="accent-colors" id="accent-colors">
+              <button class="accent-dot active" data-accent="#4fc3f7" style="background:#4fc3f7;"></button>
+              <button class="accent-dot" data-accent="#81c784" style="background:#81c784;"></button>
+              <button class="accent-dot" data-accent="#ff8a65" style="background:#ff8a65;"></button>
+              <button class="accent-dot" data-accent="#ce93d8" style="background:#ce93d8;"></button>
+              <button class="accent-dot" data-accent="#fff176" style="background:#fff176;"></button>
+              <button class="accent-dot" data-accent="#ef5350" style="background:#ef5350;"></button>
+              <button class="accent-dot" data-accent="#ffffff" style="background:#ffffff;"></button>
+              <button class="accent-dot" data-accent="#ff4081" style="background:#ff4081;"></button>
+              <button class="accent-dot" data-accent="#00e5ff" style="background:#00e5ff;"></button>
+              <button class="accent-dot" data-accent="#76ff03" style="background:#76ff03;"></button>
+              <button class="accent-dot" data-accent="#ffd600" style="background:#ffd600;"></button>
+              <button class="accent-dot" data-accent="#ff6e40" style="background:#ff6e40;"></button>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Accent Brightness</label>
+            <input type="range" id="accent-brightness-slider" min="0.6" max="1.4" step="0.05" value="1" class="setting-slider">
+            <span id="accent-brightness-label">100%</span>
+            <div class="setting-hint">Lightens or darkens your accent color independent of overall UI brightness</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Accent Outline Color</label>
+            <input type="color" id="accent-outline-color" class="custom-color-input" value="#4fc3f7" title="Border/outline color">
+            <button class="btn-sm btn-secondary" id="btn-reset-accent-outline">Reset</button>
+            <div class="setting-hint">Separate color for borders and outlines around buttons, inputs, and panels — defaults to matching the accent color</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Accent Gradient</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="accent-gradient-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+            <div class="setting-hint">Uses a two-color gradient instead of a flat color for buttons and highlights</div>
+          </div>
+
+          <div class="setting-group hidden" id="accent-gradient-color2-group">
+            <label class="setting-label">Accent Gradient — 2nd Color</label>
+            <input type="color" id="accent-gradient-color2" class="custom-color-input" value="#ff8a65" title="Second gradient color">
+            <button class="btn-sm btn-secondary" id="btn-reset-accent-gradient-color2">Reset</button>
+            <div class="setting-hint">Defaults to a close tint of your accent color for a subtle blend. Pick your own for more contrast.</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Preview</label>
+            <div class="accent-preview-box">
+              <button class="accent-preview-btn" type="button">Sample Button</button>
+              <div class="accent-preview-outline">Outline &amp; Border</div>
+              <span class="accent-preview-text">Accent Text</span>
+            </div>
+            <div class="setting-hint">Live preview of your accent color, brightness, outline, and gradient settings above.</div>
+          </div>
+
           <!-- Custom Theme Builder (visible when Custom theme is selected) -->
           <div class="setting-group hidden" id="custom-theme-builder">
             <label class="setting-label">Custom Theme Builder</label>
@@ -651,6 +743,12 @@
             </div>
 
             <div class="setting-hint">Pick colors with the color wheel or type a hex code. Text colors adapt automatically to light or dark backgrounds.</div>
+
+            <div class="custom-theme-row custom-theme-io-row">
+              <button class="btn-sm btn-secondary" id="btn-export-theme">Export Theme...</button>
+              <button class="btn-sm btn-secondary" id="btn-import-theme">Import Theme...</button>
+            </div>
+            <div class="setting-hint">Save your custom theme to a file to share it or reuse it on another install, or load one someone shared with you.</div>
           </div>
 
           <div class="setting-group">
@@ -714,54 +812,6 @@
             <input type="range" id="bg-blur-slider" min="0" max="150" step="1" value="0" class="setting-slider">
             <span id="bg-blur-label">0px</span>
             <div class="setting-hint">Blurs your custom background image (0 = sharp, 150 = fully soft)</div>
-          </div>
-
-          <div class="setting-group">
-            <label class="setting-label">Accent Color</label>
-            <div class="accent-colors" id="accent-colors">
-              <button class="accent-dot active" data-accent="#4fc3f7" style="background:#4fc3f7;"></button>
-              <button class="accent-dot" data-accent="#81c784" style="background:#81c784;"></button>
-              <button class="accent-dot" data-accent="#ff8a65" style="background:#ff8a65;"></button>
-              <button class="accent-dot" data-accent="#ce93d8" style="background:#ce93d8;"></button>
-              <button class="accent-dot" data-accent="#fff176" style="background:#fff176;"></button>
-              <button class="accent-dot" data-accent="#ef5350" style="background:#ef5350;"></button>
-              <button class="accent-dot" data-accent="#ffffff" style="background:#ffffff;"></button>
-              <button class="accent-dot" data-accent="#ff4081" style="background:#ff4081;"></button>
-              <button class="accent-dot" data-accent="#00e5ff" style="background:#00e5ff;"></button>
-              <button class="accent-dot" data-accent="#76ff03" style="background:#76ff03;"></button>
-              <button class="accent-dot" data-accent="#ffd600" style="background:#ffd600;"></button>
-              <button class="accent-dot" data-accent="#ff6e40" style="background:#ff6e40;"></button>
-            </div>
-          </div>
-
-          <div class="setting-group">
-            <label class="setting-label">Accent Brightness</label>
-            <input type="range" id="accent-brightness-slider" min="0.6" max="1.4" step="0.05" value="1" class="setting-slider">
-            <span id="accent-brightness-label">100%</span>
-            <div class="setting-hint">Lightens or darkens your accent color independent of overall UI brightness</div>
-          </div>
-
-          <div class="setting-group">
-            <label class="setting-label">Accent Outline Color</label>
-            <input type="color" id="accent-outline-color" class="custom-color-input" value="#4fc3f7" title="Border/outline color">
-            <button class="btn-sm btn-secondary" id="btn-reset-accent-outline">Reset</button>
-            <div class="setting-hint">Separate color for borders and outlines around buttons, inputs, and panels — defaults to matching the accent color</div>
-          </div>
-
-          <div class="setting-group">
-            <label class="setting-label">Accent Gradient</label>
-            <label class="toggle-switch">
-              <input type="checkbox" id="accent-gradient-toggle">
-              <span class="toggle-slider"></span>
-            </label>
-            <div class="setting-hint">Uses a two-color gradient instead of a flat color for buttons and highlights</div>
-          </div>
-
-          <div class="setting-group hidden" id="accent-gradient-color2-group">
-            <label class="setting-label">Accent Gradient — 2nd Color</label>
-            <input type="color" id="accent-gradient-color2" class="custom-color-input" value="#ff8a65" title="Second gradient color">
-            <button class="btn-sm btn-secondary" id="btn-reset-accent-gradient-color2">Reset</button>
-            <div class="setting-hint">Defaults to a close tint of your accent color for a subtle blend. Pick your own for more contrast.</div>
           </div>
 
           <div class="setting-group">
@@ -972,6 +1022,15 @@
               <span class="toggle-slider"></span>
             </label>
             <div class="setting-hint">Display keyboard shortcut reference</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Auto Update</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="auto-update-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+            <div class="setting-hint">Automatically check for updates on launch and every hour. Off: the bottom-right button still lets you check manually anytime.</div>
           </div>
         </div>
 

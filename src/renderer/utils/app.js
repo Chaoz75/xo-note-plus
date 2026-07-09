@@ -93,6 +93,7 @@ const App = {
     glowMatchIntensity: false,
     leftRailWidth: 200,
     showKeyboardShortcuts: true,
+    autoUpdateEnabled: true,
     showStickyNotes: true,
     showStickyTasks: true,
     dashboardColorLink: false,
@@ -420,6 +421,10 @@ const App = {
     const shortcutsArea = document.querySelector('.dashboard-shortcuts');
     if (shortcutsArea) shortcutsArea.style.display = (s.showKeyboardShortcuts !== false) ? '' : 'none';
 
+    // Auto Update toggle
+    const autoUpd = document.getElementById('auto-update-toggle');
+    if (autoUpd) autoUpd.checked = s.autoUpdateEnabled !== false;
+
     // Sticky notes and tasks visibility — hide the entire sticky sections, not just panels
     const ssn = document.getElementById('show-sticky-notes-toggle');
     if (ssn) ssn.checked = s.showStickyNotes !== false;
@@ -635,11 +640,62 @@ const App = {
     const c = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
     return '#' + c(r) + c(g) + c(b);
   },
-  _shade(hex, amount) {
-    // amount > 0 lightens, < 0 darkens (absolute per-channel)
+  _hexToHsl(hex) {
     const c = this._hexToRgb(hex);
-    if (!c) return hex;
-    return this._rgbToHex(c.r + amount, c.g + amount, c.b + amount);
+    if (!c) return null;
+    const r = c.r / 255, g = c.g / 255, b = c.b / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h, s;
+    const l = (max + min) / 2;
+    if (max === min) { h = s = 0; }
+    else {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+        case g: h = (b - r) / d + 2; break;
+        default: h = (r - g) / d + 4; break;
+      }
+      h /= 6;
+    }
+    return { h: h * 360, s: s * 100, l: l * 100 };
+  },
+  _hslToHex(h, s, l) {
+    h = ((h % 360) + 360) % 360 / 360; s = Math.max(0, Math.min(100, s)) / 100; l = Math.max(0, Math.min(100, l)) / 100;
+    let r, g, b;
+    if (s === 0) { r = g = b = l; }
+    else {
+      const hue2rgb = (p, q, t) => {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1 / 6) return p + (q - p) * 6 * t;
+        if (t < 1 / 2) return q;
+        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+        return p;
+      };
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      r = hue2rgb(p, q, h + 1 / 3);
+      g = hue2rgb(p, q, h);
+      b = hue2rgb(p, q, h - 1 / 3);
+    }
+    return this._rgbToHex(r * 255, g * 255, b * 255);
+  },
+  _shade(hex, amount) {
+    // amount > 0 lightens, < 0 darkens. Works in HSL lightness (perceptual,
+    // full 0-100 range) instead of adding a flat number to each RGB channel:
+    // bright/saturated Color 1 values (e.g. pure yellow, pure red) already
+    // have one or more channels pinned at 0 or 255, so the old per-channel
+    // add clipped immediately and made bg-secondary/tertiary/elevated/hover/
+    // active all collapse to nearly the same color — reading as one flat
+    // "solid" box instead of the intended layered depth. HSL lightness has
+    // nowhere to clip except true black/white, so it stays gradual for any
+    // base color. (amount/2.55 keeps the same rough magnitude as before,
+    // since the old amounts were tuned as 0-255 units.)
+    const hsl = this._hexToHsl(hex);
+    if (!hsl) return hex;
+    const l = Math.max(0, Math.min(100, hsl.l + amount / 2.55));
+    return this._hslToHex(hsl.h, hsl.s, l);
   },
   _mix(hexA, hexB, t) {
     const a = this._hexToRgb(hexA), b = this._hexToRgb(hexB);
@@ -785,6 +841,54 @@ const App = {
       preview.style.background = mode === 'gradient'
         ? 'linear-gradient(' + angle + 'deg, ' + c1 + ' 0%, ' + c2 + ' ' + spread + '%)'
         : c1;
+    }
+  },
+
+  // ── Custom Theme import/export (share a built theme between installs) ──
+  async exportCustomTheme() {
+    const ct = this.settings.customTheme || {};
+    const payload = {
+      xoNoteTheme: true,
+      version: 1,
+      customTheme: {
+        mode: ct.mode || 'gradient',
+        color1: ct.color1 || '#0a0a14',
+        color2: ct.color2 || '#1a1a3e',
+        angle: ct.angle !== undefined ? ct.angle : 135,
+        spread: ct.spread !== undefined ? ct.spread : 100,
+        accent: ct.accent || '#4fc3f7'
+      }
+    };
+    try {
+      const ok = await window.xo.exportThemeFile(JSON.stringify(payload, null, 2));
+      this.updateStatusMessage(ok ? 'Theme exported' : 'Export cancelled');
+    } catch (e) { this.updateStatusMessage('Export failed'); }
+  },
+
+  async importCustomTheme() {
+    try {
+      const raw = await window.xo.importThemeFile();
+      if (!raw) return; // cancelled
+      const parsed = JSON.parse(raw);
+      const ct = parsed && parsed.customTheme ? parsed.customTheme : parsed;
+      if (!ct || typeof ct !== 'object' || !ct.color1) {
+        this.updateStatusMessage('That file doesn\'t look like a valid XO NOTE+ theme');
+        return;
+      }
+      this.settings.customTheme = {
+        mode: ct.mode === 'solid' ? 'solid' : 'gradient',
+        color1: /^#[0-9a-fA-F]{6}$/.test(ct.color1) ? ct.color1 : '#0a0a14',
+        color2: /^#[0-9a-fA-F]{6}$/.test(ct.color2) ? ct.color2 : '#1a1a3e',
+        angle: (typeof ct.angle === 'number') ? ct.angle : 135,
+        spread: (typeof ct.spread === 'number') ? ct.spread : 100,
+        accent: /^#[0-9a-fA-F]{6}$/.test(ct.accent) ? ct.accent : '#4fc3f7'
+      };
+      this.settings.theme = 'theme-custom'; // switch to Custom so the import is visible right away
+      this.saveSettings();
+      this.applySettings();
+      this.updateStatusMessage('Theme imported');
+    } catch (e) {
+      this.updateStatusMessage('Import failed — file may be corrupted');
     }
   },
 
@@ -940,6 +1044,7 @@ const App = {
     let version = '';
     try { version = (await window.xo.getAppVersion()) || ''; } catch (e) { }
     if (!version) version = list.length ? list[0].version : '';
+    this.appVersion = version;
 
     const label = document.getElementById('changelog-version-label');
     if (label) label.textContent = version ? 'v' + version : 'Changelog';
@@ -1035,12 +1140,17 @@ const App = {
   // ── Auto-update (bottom-right status button) ──
   initAutoUpdate() {
     this._updateState = 'up-to-date';
+    this._availableUpdate = null;
     if (window.xo.onUpdateStatus) {
       window.xo.onUpdateStatus((data) => this._handleUpdateStatus(data));
     }
+    if (window.xo.onManualDownloadProgress) {
+      window.xo.onManualDownloadProgress((data) => this.updateUpdatePickerProgress(data.percent));
+    }
     // Give the window a moment to settle before the first check (main
-    // process also does its own check shortly after launch — this just
-    // makes sure the renderer's label reflects whatever main already knows).
+    // process also does its own check shortly after launch, gated on the
+    // Auto Update setting — this just makes sure the renderer's label
+    // reflects whatever main already knows).
     setTimeout(() => { try { window.xo.checkForUpdates && window.xo.checkForUpdates(); } catch (e) { } }, 4500);
   },
 
@@ -1054,11 +1164,17 @@ const App = {
       case 'checking':
         label.textContent = 'Checking for updates...';
         break;
+      case 'available':
+        this._availableUpdate = { version: data.version || '', notes: data.notes || '' };
+        label.textContent = 'You Got an Update! Click to view';
+        btn.classList.add('update-downloading');
+        break;
       case 'downloading':
         label.textContent = (data.percent != null && data.percent > 0)
           ? 'Downloading update... ' + data.percent + '%'
           : 'Update found, downloading...';
         btn.classList.add('update-downloading');
+        this.updateUpdatePickerProgress(data.percent);
         break;
       case 'ready':
         label.textContent = 'You Got an Update! Click to restart';
@@ -1067,15 +1183,160 @@ const App = {
       case 'up-to-date':
       default:
         label.textContent = "You're up to Date!";
+        this._availableUpdate = null;
         break;
     }
+  },
+
+  // ── Report a Bug (bottom-right) ──
+  async reportBug() {
+    let version = this.appVersion || '';
+    if (!version) {
+      try { version = (await window.xo.getAppVersion()) || ''; } catch (e) { }
+    }
+    const title = encodeURIComponent('[Bug] ' + (version ? 'v' + version + ' — ' : ''));
+    const url = 'https://github.com/Chaoz75/xo-note-plus/issues/new?title=' + title;
+    try { await window.xo.openExternal(url); } catch (e) { }
   },
 
   async handleUpdateButtonClick() {
     if (this._updateState === 'ready') {
       try { await window.xo.quitAndInstall(); } catch (e) { }
+    } else if (this._updateState === 'available') {
+      this.openUpdatePicker();
     } else if (this._updateState !== 'checking' && this._updateState !== 'downloading') {
       try { await window.xo.checkForUpdates(); } catch (e) { }
+    }
+  },
+
+  // ── Update picker modal (choose latest vs. any other version) ──
+  openUpdatePicker() {
+    const modal = document.getElementById('update-picker-modal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    this.showUpdatePickerChoiceView();
+  },
+
+  closeUpdatePicker() {
+    const modal = document.getElementById('update-picker-modal');
+    if (modal) modal.classList.add('hidden');
+  },
+
+  showUpdatePickerChoiceView() {
+    const choiceView = document.getElementById('update-picker-choice-view');
+    const listView = document.getElementById('update-picker-list-view');
+    const progressView = document.getElementById('update-picker-progress-view');
+    if (choiceView) choiceView.classList.remove('hidden');
+    if (listView) listView.classList.add('hidden');
+    if (progressView) progressView.classList.add('hidden');
+
+    const update = this._availableUpdate || {};
+    const verEl = document.getElementById('update-picker-latest-version');
+    if (verEl) verEl.textContent = update.version ? ('v' + update.version) : '—';
+    const notesEl = document.getElementById('update-picker-latest-notes');
+    if (notesEl) notesEl.textContent = update.notes || '';
+  },
+
+  async showUpdatePickerListView() {
+    const choiceView = document.getElementById('update-picker-choice-view');
+    const listView = document.getElementById('update-picker-list-view');
+    const progressView = document.getElementById('update-picker-progress-view');
+    if (choiceView) choiceView.classList.add('hidden');
+    if (listView) listView.classList.remove('hidden');
+    if (progressView) progressView.classList.add('hidden');
+
+    const listEl = document.getElementById('update-picker-version-list');
+    if (!listEl) return;
+    listEl.innerHTML = '<p class="sidebar-empty">Loading versions...</p>';
+    try {
+      const releases = (await window.xo.listReleases()) || [];
+      if (!releases.length) {
+        listEl.innerHTML = '<p class="sidebar-empty">No releases found.</p>';
+        return;
+      }
+      listEl.innerHTML = '';
+      releases.forEach((r) => {
+        const isCurrent = !!this.appVersion && r.version === this.appVersion;
+        const item = document.createElement('div');
+        item.className = 'update-version-item';
+        item.innerHTML =
+          '<div class="update-version-item-header">' +
+            '<span class="update-version-item-version"></span>' +
+            '<span class="update-version-item-date"></span>' +
+            (isCurrent ? '<span class="update-version-item-badge">Current</span>' : '') +
+          '</div>' +
+          '<div class="update-version-item-notes"></div>';
+        item.querySelector('.update-version-item-version').textContent = 'v' + r.version;
+        item.querySelector('.update-version-item-date').textContent = r.publishedAt ? new Date(r.publishedAt).toLocaleDateString() : '';
+        item.querySelector('.update-version-item-notes').textContent = r.notes || '';
+        if (!isCurrent) {
+          const installBtn = document.createElement('button');
+          installBtn.className = 'btn-sm btn-secondary';
+          installBtn.textContent = 'Install this Version';
+          installBtn.addEventListener('click', () => this.selectVersionToInstall(r));
+          item.appendChild(installBtn);
+        }
+        listEl.appendChild(item);
+      });
+    } catch (e) {
+      listEl.innerHTML = '<p class="sidebar-empty">Could not load release list.</p>';
+    }
+  },
+
+  showUpdatePickerProgressView(labelText) {
+    const choiceView = document.getElementById('update-picker-choice-view');
+    const listView = document.getElementById('update-picker-list-view');
+    const progressView = document.getElementById('update-picker-progress-view');
+    if (choiceView) choiceView.classList.add('hidden');
+    if (listView) listView.classList.add('hidden');
+    if (progressView) progressView.classList.remove('hidden');
+    const progLabel = document.getElementById('update-picker-progress-label');
+    if (progLabel) progLabel.textContent = labelText || 'Downloading...';
+    const fill = document.getElementById('update-picker-progress-fill');
+    if (fill) fill.style.width = '0%';
+  },
+
+  updateUpdatePickerProgress(percent) {
+    const modal = document.getElementById('update-picker-modal');
+    if (!modal || modal.classList.contains('hidden')) return;
+    const progressView = document.getElementById('update-picker-progress-view');
+    if (!progressView || progressView.classList.contains('hidden')) return;
+    if (percent == null) return;
+    const fill = document.getElementById('update-picker-progress-fill');
+    if (fill) fill.style.width = percent + '%';
+    const progLabel = document.getElementById('update-picker-progress-label');
+    if (progLabel) progLabel.textContent = 'Downloading update... ' + percent + '%';
+  },
+
+  async chooseUpdateToLatest() {
+    this.showUpdatePickerProgressView('Downloading latest version...');
+    try {
+      await window.xo.startDownloadLatest();
+      // The 'ready' status arrives via onUpdateStatus once the download
+      // finishes — close the picker and let the bottom-right button
+      // prompt the restart.
+      this.closeUpdatePicker();
+    } catch (e) {
+      this.showUpdatePickerChoiceView();
+    }
+  },
+
+  chooseOtherVersion() {
+    this.showUpdatePickerListView();
+  },
+
+  async selectVersionToInstall(release) {
+    this.showUpdatePickerProgressView('Downloading v' + release.version + '...');
+    try {
+      const filePath = await window.xo.downloadSpecificVersion(release.assetId, release.version);
+      if (!filePath) {
+        this.showUpdatePickerProgressView('Download failed. Please try again.');
+        return;
+      }
+      this.showUpdatePickerProgressView('Installing v' + release.version + '...');
+      await window.xo.installDownloadedFile(filePath);
+    } catch (e) {
+      this.showUpdatePickerProgressView('Download failed. Please try again.');
     }
   },
 
@@ -3387,6 +3648,24 @@ const App = {
     this.openFile(filePath, name + '.md');
   },
 
+  // "Quick Note" (left rail) — skips the name prompt entirely so it's
+  // actually quick: creates a note with an auto-generated title (bumping
+  // a number if that title's already taken) and opens it immediately,
+  // ready to type. Rename it later the same way as any other note.
+  async createQuickNote() {
+    const base = 'Untitled Note';
+    let name = base;
+    let n = 2;
+    while (await window.xo.fileExists(this.vaultPath + '/' + name + '.md')) {
+      name = base + ' ' + n;
+      n++;
+    }
+    const filePath = this.vaultPath + '/' + name + '.md';
+    await window.xo.writeFile(filePath, '');
+    await this.loadFileTree();
+    this.openFile(filePath, name + '.md');
+  },
+
   async createNewFolder() {
     const name = await window.xo.showInputDialog('New Folder', 'Folder name:', 'New Folder');
     if (!name) return;
@@ -4673,6 +4952,10 @@ const App = {
       this.applyBackgroundStyle();
       this.saveSettings();
     });
+    const exportThemeBtn = document.getElementById('btn-export-theme');
+    if (exportThemeBtn) exportThemeBtn.addEventListener('click', () => this.exportCustomTheme());
+    const importThemeBtn = document.getElementById('btn-import-theme');
+    if (importThemeBtn) importThemeBtn.addEventListener('click', () => this.importCustomTheme());
     const chooseBgBtn = document.getElementById('btn-choose-bg-image');
     if (chooseBgBtn) chooseBgBtn.addEventListener('click', () => this.chooseBackgroundImage());
     const clearBgBtn = document.getElementById('btn-clear-bg-image');
@@ -4731,10 +5014,31 @@ const App = {
         this.closeCreatorsPanel();
       }
     });
+    const crChaozLink = document.getElementById('creator-contact-chaoz');
+    if (crChaozLink) crChaozLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.xo.openExternal('https://github.com/Chaoz75');
+    });
 
     // Update status (bottom-right)
     const upBtn = document.getElementById('btn-update-status');
     if (upBtn) upBtn.addEventListener('click', () => this.handleUpdateButtonClick());
+
+    // Report a Bug (bottom-right) — opens a pre-filled GitHub issue
+    const bugBtn = document.getElementById('btn-report-bug');
+    if (bugBtn) bugBtn.addEventListener('click', () => this.reportBug());
+
+    // Update picker modal
+    const upClose = document.getElementById('btn-update-picker-close');
+    if (upClose) upClose.addEventListener('click', () => this.closeUpdatePicker());
+    const upOverlay = document.querySelector('#update-picker-modal .modal-overlay');
+    if (upOverlay) upOverlay.addEventListener('click', () => this.closeUpdatePicker());
+    const upToLatest = document.getElementById('btn-update-to-latest');
+    if (upToLatest) upToLatest.addEventListener('click', () => this.chooseUpdateToLatest());
+    const upOther = document.getElementById('btn-choose-other-version');
+    if (upOther) upOther.addEventListener('click', () => this.chooseOtherVersion());
+    const upBack = document.getElementById('btn-back-to-choice');
+    if (upBack) upBack.addEventListener('click', () => this.showUpdatePickerChoiceView());
 
     // Setup wizard
     document.getElementById('btn-select-vault').addEventListener('click', async () => {
@@ -4785,7 +5089,7 @@ const App = {
     // New file/folder
     document.getElementById('btn-new-file').addEventListener('click', () => this.createNewFile());
     document.getElementById('btn-new-folder').addEventListener('click', () => this.createNewFolder());
-    document.getElementById('btn-quick-note').addEventListener('click', () => this.createNewFile());
+    document.getElementById('btn-quick-note').addEventListener('click', () => this.createQuickNote());
 
     // Rich editor input
     document.getElementById('editor-rich').addEventListener('input', () => this.onRichEditorChange());
@@ -5292,6 +5596,10 @@ const App = {
     // Keyboard shortcuts toggle
     const sks = document.getElementById('show-shortcuts-toggle');
     if (sks) sks.addEventListener('change', (e) => { this.settings.showKeyboardShortcuts = e.target.checked; this.saveSettings(); this.applySettings(); });
+
+    // Auto Update toggle
+    const autoUpd = document.getElementById('auto-update-toggle');
+    if (autoUpd) autoUpd.addEventListener('change', (e) => { this.settings.autoUpdateEnabled = e.target.checked; this.saveSettings(); });
 
     // Sticky notes toggle
     const ssn = document.getElementById('show-sticky-notes-toggle');
