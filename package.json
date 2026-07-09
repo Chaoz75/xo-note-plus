@@ -1,0 +1,50 @@
+{
+  "name": "xo-note-plus",
+  "version": "1.1.0",
+  "description": "XO NOTE+ — A premium local markdown workspace by XO Systems",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win",
+    "publish": "electron-builder --win --publish always",
+    "dev": "electron . --dev"
+  },
+  "author": "XO Systems",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.1.0",
+    "electron-builder": "^26.15.3"
+  },
+  "dependencies": {
+    "chokidar": "^3.5.3",
+    "electron-updater": "^6.1.7",
+    "highlight.js": "^11.9.0",
+    "marked": "^11.1.1"
+  },
+  "build": {
+    "appId": "com.xosystems.xonoteplus",
+    "productName": "XO NOTE+",
+    "win": {
+      "target": "nsis",
+      "icon": "src/renderer/assets/icon.ico"
+    },
+    "fileAssociations": [
+      { "ext": "md", "name": "Markdown Document", "description": "Markdown Document", "role": "Editor" },
+      { "ext": "txt", "name": "Text Document", "description": "Text Document", "role": "Editor" },
+      { "ext": "markdown", "name": "Markdown Document", "description": "Markdown Document", "role": "Editor" }
+    ],
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "src/renderer/assets/icon.ico"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Chaoz75",
+        "repo": "xo-note-plus",
+        "private": true
+      }
+    ]
+  }
+}
