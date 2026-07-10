@@ -9,6 +9,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.2.0',
+    date: '2026-07-09',
+    changes: [
+      'Fixed: checking for updates was silently failing for everyone on an installed copy of the app. The repo this app publishes to was private, which meant every update check needed a GitHub token — but the installed app never has one, so every check failed quietly and just looked like "you\'re up to date" even when it wasn\'t.',
+      'The repo is now public, so update checks and downloads work with zero authentication needed. If you were stuck on an older version and this update reaches you at all, that confirms it\'s fixed — future updates should now come through normally.',
+      'This does mean the source code is publicly viewable/downloadable on GitHub going forward — the LICENSE still legally protects it as All Rights Reserved, it\'s just no longer hidden from view.'
+    ]
+  },
+  {
     version: '1.1.9',
     date: '2026-07-09',
     changes: [

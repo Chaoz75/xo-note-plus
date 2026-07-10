@@ -11,18 +11,16 @@ let vaultPath = null;
 const CONFIG_PATH = path.join(app.getPath('userData'), 'xonote-config.json');
 
 // ── Auto-Update (GitHub Releases) ──────────────────────────
-// xo-note-plus currently publishes to a PRIVATE GitHub repo while testing
-// (package.json build.publish → private: true). Checking a private repo
-// for releases requires a GitHub token with "repo" scope — public repos
-// need none of this at all, so once you flip the repo to public, just
-// delete/blank out GH_TOKEN below and updates keep working with zero auth.
+// xo-note-plus publishes to a PUBLIC GitHub repo, so checking for and
+// downloading releases needs no authentication at all — GH_TOKEN below stays
+// blank for every installed copy of the app and that's expected and fine.
 //
-// Fill in a token here for testing with a small group (Chaoz/XORAYDEN), or
-// set a GH_TOKEN environment variable instead (safer — nothing to remember
-// to strip out later). Whoever runs the installed app needs this token
-// available, since the APP itself is what checks GitHub, not just the
-// machine that published the release.
-const GH_TOKEN = process.env.GH_TOKEN || ''; // <-- put your token here for local testing if you don't want to set an env var
+// GH_TOKEN is only ever read from the environment (never hardcoded here), and
+// is only actually used by the local publishing scripts (PUBLISH-UPDATE.bat)
+// to raise GitHub's API rate limit and to merge/annotate releases after
+// publishing. The installed app itself doesn't need it to check for or
+// download updates, since public repos are readable by anyone.
+const GH_TOKEN = process.env.GH_TOKEN || '';
 
 const GH_PUBLISH_CFG = (pkg.build && pkg.build.publish && pkg.build.publish[0]) || {};
 const GH_OWNER = GH_PUBLISH_CFG.owner || '';
