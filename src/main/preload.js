@@ -29,9 +29,13 @@ contextBridge.exposeInMainWorld('xo', {
   ensureDirectory: (dirPath) => ipcRenderer.invoke('ensure-directory', dirPath),
   fileExists: (filePath) => ipcRenderer.invoke('file-exists', filePath),
   copyExternalItem: (srcPath, destDir) => ipcRenderer.invoke('copy-external-item', srcPath, destDir),
+  selectFileToImport: () => ipcRenderer.invoke('select-file-to-import'),
 
   // Dialogs
   showInputDialog: (title, label, defaultValue) => ipcRenderer.invoke('show-input-dialog', title, label, defaultValue),
+
+  // Language
+  getSystemLocale: () => ipcRenderer.invoke('get-system-locale'),
 
   // Path utils
   getPathSep: () => ipcRenderer.invoke('get-path-sep'),

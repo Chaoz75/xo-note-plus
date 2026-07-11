@@ -249,7 +249,9 @@ html, body {
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
+  overflow-wrap: break-word;
 }
+.rail-header span { min-width: 0; }
 .rail-header.clickable {
   cursor: pointer;
   transition: all 0.2s;
@@ -824,15 +826,29 @@ body.full-gradient-mode .widgets-bar {
   font-size: 11px;
   color: var(--text-dim);
   flex-shrink: 0;
+  position: relative;
 }
+.bottom-left, .bottom-right { position: relative; z-index: 1; }
 .bottom-center {
+  /* True horizontal center of the whole bar, independent of how wide the
+     left status text or right-hand button cluster happen to be — flexbox
+     space-between alone only centers it when both sides are equal width. */
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   letter-spacing: 3px;
   font-size: 8px;
   font-weight: 700;
   text-transform: uppercase;
   opacity: 0.4;
+  pointer-events: none;
+  white-space: nowrap;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.bottom-right { display: flex; gap: 18px; font-size: 10px; align-items: center; }
+.bottom-right { display: flex; gap: clamp(6px, 1.5vw, 18px); font-size: 10px; align-items: center; min-width: 0; }
 
 /* ═══ CHANGELOG ═══ */
 .changelog-toggle-btn {
@@ -846,6 +862,17 @@ body.full-gradient-mode .widgets-bar {
   border-radius: 5px;
   position: relative;
   transition: all 0.15s;
+  min-width: 0;
+}
+/* Translated labels can run longer than English (e.g. Russian) — this bar is
+   a fixed single line, so text-bearing labels get a soft ellipsis cap instead
+   of overflowing the window or wrapping the bar to a second line. The button's
+   native `title` attribute still shows the full text on hover. */
+.changelog-toggle-btn > span:not(.changelog-dot) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 150px;
 }
 .changelog-toggle-btn:hover {
   color: var(--text-primary);
@@ -1063,6 +1090,7 @@ body.full-gradient-mode .widgets-bar {
   font-weight: 400;
   transition: all 0.15s;
   font-family: inherit;
+  overflow-wrap: break-word;
 }
 .settings-tab:hover { color: var(--text-primary); background: var(--bg-hover); }
 .settings-tab.active {
@@ -1074,7 +1102,18 @@ body.full-gradient-mode .widgets-bar {
 .settings-panel { display: none; padding: 24px; flex: 1; overflow-y: auto; }
 .settings-panel.active { display: block; }
 .setting-group { margin-bottom: 24px; }
-.setting-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 10px; }
+.settings-section-heading {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
+  margin: 4px 0 16px;
+  overflow-wrap: break-word;
+}
+.setting-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 10px; overflow-wrap: break-word; }
 .setting-hint { font-size: 11px; color: var(--text-dim); margin-top: 6px; }
 .setting-row { display: flex; align-items: center; gap: 12px; }
 .setting-value { font-size: 12px; color: var(--text-secondary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1427,6 +1466,36 @@ body[data-ui-weight="900"] .ctx-item { font-weight: 900 !important; }
   backdrop-filter: blur(8px);
   box-shadow: 0 0 20px var(--accent-dim);
   transition: all 0.2s;
+  /* Safety net: the resize handle also enforces a minimum size that fits the
+     grid/clocks, but if content ever runs taller than the box for any reason
+     this keeps it a clean clip instead of the border visually slicing through
+     the date numbers. */
+  overflow: hidden;
+}
+
+/* Remove (✕) button on the dashboard calendar/clocks widgets -- only
+   present while the dashboard lock is unlocked. Same corner across every
+   dashboard theme since it's added structurally by JS, not per-theme CSS. */
+.dashboard-widget-remove-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+  color: var(--text-dim);
+  font-size: 11px;
+  cursor: pointer;
+  z-index: 101;
+  transition: background 0.15s, color 0.15s;
+}
+.dashboard-widget-remove-btn:hover {
+  background: #ff5070;
+  color: #fff;
 }
 .dashboard-shortcuts {
   width: 100%;

@@ -120,29 +120,49 @@ async function main() {
   console.log('[merge-split-release] Checking for a split release on ' + TAG + '...');
   const releases = await ghApi('GET', '/repos/' + OWNER + '/' + REPO + '/releases?per_page=30');
 
-  // GitHub only ever allows ONE release per tag, so the release actually
-  // tagged v<version> — whether it's a draft or already published (releaseType
-  // "release" auto-publishes it the moment the upload finishes) — is always
-  // the correct merge target. Any OTHER release from the same botched publish
-  // is a leftover: GitHub couldn't resolve the draft-in-progress by tag, so it
-  // stuck the rest of the files under a throwaway "untagged-..." draft instead.
-  // Those leftovers are always drafts, and those are the only releases this
-  // script ever deletes — a published release is never touched or removed.
-  const taggedRelease = (releases || []).find((r) => r.tag_name === TAG);
-  const leftoverDrafts = (releases || []).filter((r) => {
-    if (!r.draft) return false;
-    if (r.tag_name === TAG) return false; // that IS taggedRelease, not a leftover
-    if ((r.tag_name || '').indexOf('untagged-') === 0) return true;
+  // Historically GitHub only ever allowed ONE release per tag, so any split
+  // leftover was stuck as a throwaway "untagged-..." DRAFT that never made it
+  // to the real tag. That's still possible and handled below. But since
+  // switching to releaseType: "release" (instant-live publishing, no draft
+  // step), we've also seen GitHub produce TWO fully-published, non-draft
+  // releases that both legitimately claim the exact same tag (v1.2.0 shipped
+  // with the .exe+latest.yml on one release and the .blockmap alone on a
+  // second one, both live, neither a draft). A shared exact tag_name is
+  // itself the safety proof that a release is part of the same botched
+  // publish — nothing else could legitimately have that same tag — so those
+  // get merged and deleted regardless of draft status. Only the untagged-*
+  // heuristic-matched leftovers (below) still require draft status before
+  // deletion, since those are matched by asset name substring, not an exact
+  // tag, and deserve more caution.
+  const sameTagReleases = (releases || []).filter((r) => r.tag_name === TAG);
+  const untaggedLeftovers = (releases || []).filter((r) => {
+    if (r.tag_name === TAG) return false; // already counted in sameTagReleases
+    if ((r.tag_name || '').indexOf('untagged-') !== 0) return false;
     return (r.assets || []).some((a) => a.name.indexOf(VERSION) !== -1);
   });
 
-  let primary = taggedRelease;
-  let secondaries = leftoverDrafts;
+  // Prefer whichever same-tag release actually has latest.yml as primary
+  // (that's the one electron-updater needs to find), falling back to
+  // whichever has the most assets.
+  function rank(r) {
+    const hasYml = (r.assets || []).some((a) => a.name.toLowerCase() === 'latest.yml');
+    return (hasYml ? 1000 : 0) + (r.assets || []).length;
+  }
+
+  let primary = null;
+  let taggedSecondaries = [];
+  if (sameTagReleases.length > 0) {
+    const sorted = sameTagReleases.slice().sort((a, b) => rank(b) - rank(a));
+    primary = sorted[0];
+    taggedSecondaries = sorted.slice(1);
+  }
+
+  let secondaries = taggedSecondaries.concat(untaggedLeftovers);
   if (!primary) {
     // No release is tagged v<version> yet (unusual, but fall back to
-    // whichever leftover draft has the most assets so there's still a
+    // whichever untagged leftover has the most assets so there's still a
     // sensible merge target).
-    secondaries = leftoverDrafts.slice().sort((a, b) => (b.assets || []).length - (a.assets || []).length);
+    secondaries = untaggedLeftovers.slice().sort((a, b) => (b.assets || []).length - (a.assets || []).length);
     primary = secondaries.shift();
   }
 
@@ -158,6 +178,7 @@ async function main() {
 
   try {
     for (const secondary of secondaries) {
+      const sharesExactTag = secondary.tag_name === TAG;
       for (const asset of (secondary.assets || [])) {
         if (primaryNames.has(asset.name)) continue; // already present in the primary release
         console.log('[merge-split-release] Moving ' + asset.name + ' into release #' + primary.id + '...');
@@ -167,11 +188,15 @@ async function main() {
         await uploadAsset(primary.id, tmpFile, asset.name);
         primaryNames.add(asset.name);
       }
-      if (!secondary.draft) {
-        console.log('[merge-split-release] Skipping delete of #' + secondary.id + ' — it is not a draft, leaving it alone as a safety measure.');
+      // Same exact tag as the primary is itself proof this is a split
+      // duplicate — safe to delete even if published. Anything else (an
+      // untagged-* heuristic match) still requires draft status as a
+      // caution, since that match is only by asset name substring.
+      if (!sharesExactTag && !secondary.draft) {
+        console.log('[merge-split-release] Skipping delete of #' + secondary.id + ' — it is not a draft and does not share the exact tag, leaving it alone as a safety measure.');
         continue;
       }
-      console.log('[merge-split-release] Deleting now-empty duplicate draft #' + secondary.id + '...');
+      console.log('[merge-split-release] Deleting now-empty duplicate #' + secondary.id + (secondary.draft ? ' (draft)' : ' (published, same tag as primary)') + '...');
       await ghApi('DELETE', '/repos/' + OWNER + '/' + REPO + '/releases/' + secondary.id);
     }
   } finally {

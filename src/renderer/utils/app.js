@@ -89,12 +89,15 @@ const App = {
     dashboardTheme: 'classic',
     widgetPositions: {},
     widgetSizes: {},
+    dashboardShowCalendar: true,
+    dashboardShowClocks: true,
     glowSyncAll: false,
     glowMatchIntensity: false,
     leftRailWidth: 200,
     showKeyboardShortcuts: true,
     autoUpdateEnabled: true,
     hasSeenOnboarding: false,
+    language: 'auto', // 'auto' | 'en' | 'fr' | 'de' | 'es' | 'ru' — 'auto' detects from the OS on first launch
     showStickyNotes: true,
     showStickyTasks: true,
     dashboardColorLink: false,
@@ -121,61 +124,72 @@ const App = {
   _onboardingIndex: 0,
   onboardingSteps: [
     {
-      title: 'Welcome to XO NOTE+',
-      body: 'A quick tour before you dive in — just a few short steps to show you around. Click "End Tutorial" anytime to skip.',
+      titleKey: 'onboarding.step.welcome.title',
+      bodyKey: 'onboarding.step.welcome.body',
       target: null
     },
     {
-      title: 'Your Notes',
-      body: 'Spaces, Starred, and Recent live in the icon rail, and your file tree sits right here. Everything you write is organized from this panel.',
+      titleKey: 'onboarding.step.yourNotes.title',
+      bodyKey: 'onboarding.step.yourNotes.body',
       target: '#file-panel',
       dashboard: true
     },
     {
-      title: 'Quick Note',
-      body: 'Click Quick Note anytime to instantly create and open a new note — no naming dialog, just start typing.',
+      titleKey: 'onboarding.step.quickNote.title',
+      bodyKey: 'onboarding.step.quickNote.body',
       target: '#btn-quick-note',
       dashboard: true
     },
     {
-      title: 'Your Home Screen',
-      body: 'This is your dashboard — a live calendar and clocks greet you here whenever you don’t have a note open.',
+      titleKey: 'onboarding.step.instantTabs.title',
+      bodyKey: 'onboarding.step.instantTabs.body',
+      target: '#tab-bar',
+      action: 'createQuickNoteDemo'
+    },
+    {
+      titleKey: 'onboarding.step.saving.title',
+      bodyKey: 'onboarding.step.saving.body',
+      target: '#btn-save-file'
+    },
+    {
+      titleKey: 'onboarding.step.homeScreen.title',
+      bodyKey: 'onboarding.step.homeScreen.body',
       target: '.dashboard-widgets',
       dashboard: true
     },
     {
-      title: 'Make It Yours',
-      body: 'Unlock the layout (🔒) to drag these widgets wherever you like, or hit ↺ anytime to reset the dashboard back to default.',
+      titleKey: 'onboarding.step.makeItYours.title',
+      bodyKey: 'onboarding.step.makeItYours.body',
       target: '.dashboard-controls',
       dashboard: true
     },
     {
-      title: 'Settings',
-      body: 'Everything about how XO NOTE+ looks and behaves lives here — themes, fonts, widgets, and more.',
+      titleKey: 'onboarding.step.settings.title',
+      bodyKey: 'onboarding.step.settings.body',
       target: '#btn-settings',
       dashboard: true
     },
     {
-      title: 'Themes & Appearance',
-      body: 'Pick from built-in themes, or scroll down to the Custom Theme Builder to design your own colors, gradients, and accent glow.',
+      titleKey: 'onboarding.step.themes.title',
+      bodyKey: 'onboarding.step.themes.body',
       target: '#theme-grid',
       settingsTab: 'appearance'
     },
     {
-      title: 'Widgets',
-      body: 'Show or hide the calendar and timezone clocks, and customize each clock’s label and timezone from here.',
+      titleKey: 'onboarding.step.widgets.title',
+      bodyKey: 'onboarding.step.widgets.body',
       target: '#tab-widgets',
       settingsTab: 'widgets'
     },
     {
-      title: 'What’s New & Support',
-      body: 'Check for updates, read the changelog, meet the Creators, or report a bug — all from this corner.',
+      titleKey: 'onboarding.step.support.title',
+      bodyKey: 'onboarding.step.support.body',
       target: '.bottom-right',
       closeSettings: true
     },
     {
-      title: 'You’re all set!',
-      body: 'I hope you enjoy the app!',
+      titleKey: 'onboarding.step.finish.title',
+      bodyKey: 'onboarding.step.finish.body',
       target: null,
       finish: true
     }
@@ -196,13 +210,14 @@ const App = {
     }
   },
 
-  _renderOnboardingStep() {
+  async _renderOnboardingStep() {
     const steps = this.onboardingSteps;
     const i = this._onboardingIndex;
     const step = steps[i];
     if (!step) { this.endOnboardingTour(); return; }
 
     if (step.dashboard) this.showDashboard();
+    if (step.action === 'createQuickNoteDemo') await this._onboardingCreateDemoNote();
 
     const modal = document.getElementById('settings-modal');
     if (step.settingsTab) {
@@ -216,11 +231,13 @@ const App = {
     const titleEl = document.getElementById('onboarding-title');
     const bodyEl = document.getElementById('onboarding-body');
     const nextBtn = document.getElementById('btn-onboarding-next');
+    const skipBtn = document.getElementById('btn-onboarding-skip');
 
-    if (counter) counter.textContent = 'Step ' + (i + 1) + ' of ' + steps.length;
-    if (titleEl) titleEl.textContent = step.title;
-    if (bodyEl) bodyEl.textContent = step.body;
-    if (nextBtn) nextBtn.textContent = step.finish ? 'Finish' : 'Next';
+    if (counter) counter.textContent = this._t('onboarding.stepCounter', i + 1, steps.length);
+    if (titleEl) titleEl.textContent = this._t(step.titleKey);
+    if (bodyEl) bodyEl.textContent = this._t(step.bodyKey);
+    if (nextBtn) nextBtn.textContent = step.finish ? this._t('onboarding.finish') : this._t('onboarding.next');
+    if (skipBtn) skipBtn.textContent = this._t('onboarding.skip');
 
     requestAnimationFrame(() => this._repositionOnboardingStep());
   },
@@ -288,13 +305,39 @@ const App = {
     if (overlay) overlay.classList.add('hidden');
     const modal = document.getElementById('settings-modal');
     if (modal) modal.classList.add('hidden');
+    this._cleanupOnboardingDemoNote();
     this.settings.hasSeenOnboarding = true;
     this.saveSettings();
+  },
+
+  // Creates a real "Untitled Note" live, the same way the Quick Note button
+  // does, so the tour can point at an actual populated tab bar. Only ever
+  // creates one — repeat visits to this step (e.g. clicking Back, if that's
+  // ever added) won't spawn duplicates.
+  async _onboardingCreateDemoNote() {
+    if (this._onboardingDemoNotePath) return;
+    await this.createQuickNote();
+    const tab = this.openTabs[this.activeTabIndex];
+    if (tab) this._onboardingDemoNotePath = tab.path;
+  },
+
+  // Removes the demo note's tab and deletes the file itself, so the tour
+  // never leaves a stray "Untitled Note" behind in a new user's vault —
+  // runs whether the tour finishes normally or gets skipped early.
+  async _cleanupOnboardingDemoNote() {
+    if (!this._onboardingDemoNotePath) return;
+    const path = this._onboardingDemoNotePath;
+    this._onboardingDemoNotePath = null;
+    const idx = this.openTabs.findIndex(t => t.path === path);
+    if (idx >= 0) this.closeTab(idx);
+    try { await window.xo.deleteItem(path); } catch (e) { }
+    try { await this.loadFileTree(); } catch (e) { }
   },
 
   // ── Init ──
   async init() {
     await this.loadSettings();
+    await this.initLanguage();
     this.vaultPath = await window.xo.getVaultPath();
 
     if (!this.vaultPath) {
@@ -412,6 +455,52 @@ const App = {
     });
   },
 
+  // ── Language / i18n ──
+  // Resolves 'auto' against the OS locale (once, async) then applies
+  // translations. Called once from init(); re-run via setLanguage() whenever
+  // the user picks something in Settings > General.
+  async initLanguage() {
+    let lang = this.settings.language || 'auto';
+    if (lang === 'auto') {
+      let locale = 'en';
+      try { locale = await window.xo.getSystemLocale(); } catch (e) { }
+      lang = detectSystemLanguage(locale);
+    }
+    this._activeLanguage = lang;
+    this.applyTranslations();
+  },
+
+  setLanguage(lang) {
+    this.settings.language = lang;
+    this._scheduleSaveSettings();
+    if (lang === 'auto') {
+      this.initLanguage();
+    } else {
+      this._activeLanguage = lang;
+      this.applyTranslations();
+    }
+  },
+
+  _t(key, ...args) {
+    return i18nString(this._activeLanguage || 'en', key, ...args);
+  },
+
+  applyTranslations() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      el.textContent = this._t(el.getAttribute('data-i18n'));
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+      el.title = this._t(el.getAttribute('data-i18n-title'));
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      el.placeholder = this._t(el.getAttribute('data-i18n-placeholder'));
+    });
+    // The onboarding tour's text is generated dynamically rather than sitting
+    // in the DOM, so refresh the current step live if the tour is open.
+    const overlay = document.getElementById('onboarding-overlay');
+    if (overlay && !overlay.classList.contains('hidden')) this._renderOnboardingStep();
+  },
+
   applySettings() {
     const s = this.settings;
     document.body.className = s.theme;
@@ -519,6 +608,8 @@ const App = {
     if (fs) fs.value = s.fontSize;
     const as = document.getElementById('auto-save-toggle');
     if (as) as.checked = s.autoSave;
+    const langSel = document.getElementById('language-select');
+    if (langSel) langSel.value = s.language || 'auto';
     const vp = document.getElementById('vault-path-display');
     if (vp && this.vaultPath) vp.textContent = this.vaultPath;
 
@@ -804,8 +895,8 @@ const App = {
       this.settings.customBackgroundPath = newPath;
       this.saveSettings();
       this.applyBackgroundStyle();
-      this.updateStatusMessage('Background image set');
-    } catch (e) { this.updateStatusMessage('Could not set background image'); }
+      this.updateStatusMessage(this._t('status.backgroundImageSet'));
+    } catch (e) { this.updateStatusMessage(this._t('status.couldNotSetBackgroundImage')); }
   },
 
   async clearBackgroundImage() {
@@ -815,7 +906,7 @@ const App = {
     this.settings.customBackgroundPath = null;
     this.saveSettings();
     this.applyBackgroundStyle();
-    this.updateStatusMessage('Background image removed');
+    this.updateStatusMessage(this._t('status.backgroundImageRemoved'));
   },
 
   // ── Custom Theme engine ──
@@ -1049,8 +1140,8 @@ const App = {
     };
     try {
       const ok = await window.xo.exportThemeFile(JSON.stringify(payload, null, 2));
-      this.updateStatusMessage(ok ? 'Theme exported' : 'Export cancelled');
-    } catch (e) { this.updateStatusMessage('Export failed'); }
+      this.updateStatusMessage(ok ? this._t('status.themeExported') : this._t('status.exportCancelled'));
+    } catch (e) { this.updateStatusMessage(this._t('status.exportFailed')); }
   },
 
   async importCustomTheme() {
@@ -1060,7 +1151,7 @@ const App = {
       const parsed = JSON.parse(raw);
       const ct = parsed && parsed.customTheme ? parsed.customTheme : parsed;
       if (!ct || typeof ct !== 'object' || !ct.color1) {
-        this.updateStatusMessage('That file doesn\'t look like a valid XO NOTE+ theme');
+        this.updateStatusMessage(this._t('status.notValidTheme'));
         return;
       }
       this.settings.customTheme = {
@@ -1074,9 +1165,9 @@ const App = {
       this.settings.theme = 'theme-custom'; // switch to Custom so the import is visible right away
       this.saveSettings();
       this.applySettings();
-      this.updateStatusMessage('Theme imported');
+      this.updateStatusMessage(this._t('status.themeImported'));
     } catch (e) {
-      this.updateStatusMessage('Import failed — file may be corrupted');
+      this.updateStatusMessage(this._t('status.importThemeFailed'));
     }
   },
 
@@ -1405,6 +1496,16 @@ const App = {
     this.showUpdatePickerChoiceView();
   },
 
+  // Right-click shortcut on the update button — jumps straight to "pick any
+  // version" (skipping the Latest/Other choice screen), regardless of what
+  // the button currently shows (up to date, available, checking, etc.).
+  openUpdatePickerToVersionList() {
+    const modal = document.getElementById('update-picker-modal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    this.showUpdatePickerListView();
+  },
+
   closeUpdatePicker() {
     const modal = document.getElementById('update-picker-modal');
     if (modal) modal.classList.add('hidden');
@@ -1437,9 +1538,23 @@ const App = {
     if (!listEl) return;
     listEl.innerHTML = '<p class="sidebar-empty">Loading versions...</p>';
     try {
-      const releases = (await window.xo.listReleases()) || [];
+      const result = await window.xo.listReleases();
+      const releases = (result && result.releases) || [];
+      const errorMsg = result && result.error;
       if (!releases.length) {
-        listEl.innerHTML = '<p class="sidebar-empty">No releases found.</p>';
+        listEl.innerHTML = '';
+        const msg = document.createElement('p');
+        msg.className = 'sidebar-empty';
+        msg.textContent = errorMsg || 'No releases found.';
+        listEl.appendChild(msg);
+        // A failed request looks identical to "nothing published yet" unless
+        // we give an obvious way to try again right here.
+        const retryBtn = document.createElement('button');
+        retryBtn.className = 'btn-sm btn-secondary';
+        retryBtn.textContent = 'Retry';
+        retryBtn.style.marginTop = '10px';
+        retryBtn.addEventListener('click', () => this.showUpdatePickerListView());
+        listEl.appendChild(retryBtn);
         return;
       }
       listEl.innerHTML = '';
@@ -1836,7 +1951,7 @@ const App = {
             if (exists) {
               this.openFile(legacyPath, dateStr + '.md');
             } else {
-              this.updateStatusMessage('No entry for ' + dateStr + ' — double-click to create');
+              this.updateStatusMessage(this._t('status.noEntryForDate', dateStr));
             }
           }
         });
@@ -2094,7 +2209,7 @@ const App = {
           for (const file of e.dataTransfer.files) {
             if (file.path) await window.xo.copyExternalItem(file.path, destDir);
           }
-          this.updateStatusMessage('Files imported');
+          this.updateStatusMessage(this._t('status.filesImported'));
           await this.loadFileTree();
           this.renderSpaces();
           return;
@@ -2109,7 +2224,7 @@ const App = {
         if (isDragOver && item.isDirectory) {
           // Move INTO folder
           await window.xo.moveItem(srcPath, item.path);
-          this.updateStatusMessage('Moved into ' + item.name);
+          this.updateStatusMessage(this._t('status.movedInto', item.name));
         } else {
           // Reorder: rebuild sort orders as clean integers
           const allItems = tree.querySelectorAll(':scope > .tree-item');
@@ -2161,7 +2276,7 @@ const App = {
         if (srcPath) {
           // Move to vault root
           await window.xo.moveItem(srcPath, this.vaultPath);
-          this.updateStatusMessage('Moved to vault root');
+          this.updateStatusMessage(this._t('status.movedToVaultRoot'));
           await this.loadFileTree();
           this.renderSpaces();
         }
@@ -2362,7 +2477,7 @@ const App = {
     await window.xo.writeFile(tab.path, tab.content);
     tab.unsaved = false;
     this.updateSaveIndicator(false);
-    this.updateStatusMessage('Saved');
+    this.updateStatusMessage(this._t('status.saved'));
     this.renderTabs();
   },
 
@@ -2370,23 +2485,47 @@ const App = {
   // mode: 'switch' (default) opens the newly written file, replacing the
   // active tab's focus. mode: 'copy' writes a duplicate alongside but keeps
   // editing the original note — nothing about the current tab changes.
-  openSaveAsModal(mode) {
-    if (this.activeTabIndex < 0) {
-      this.updateStatusMessage('No note open to save');
-      return;
+  //
+  // sourceItem (optional): { path, name, isDirectory } from a file-tree
+  // right-click. When omitted (toolbar button / Ctrl+Shift+S / Ctrl+Alt+S),
+  // this operates on the currently active tab like it always has. Passing a
+  // sourceItem makes right-click Save As/Save a Copy work on ANY note —
+  // open or not — through this same modal with the full format dropdown,
+  // instead of the old separate plain-filename prompt.
+  openSaveAsModal(mode, sourceItem) {
+    let path, name;
+    if (sourceItem) {
+      if (sourceItem.isDirectory) return; // folders can't be "saved"
+      path = sourceItem.path;
+      name = sourceItem.name;
+    } else {
+      if (this.activeTabIndex < 0) {
+        this.updateStatusMessage(this._t('status.noNoteOpenToSave'));
+        return;
+      }
+      const tab = this.openTabs[this.activeTabIndex];
+      path = tab.path;
+      name = tab.name;
     }
     this._saveAsMode = mode === 'copy' ? 'copy' : 'switch';
-    const tab = this.openTabs[this.activeTabIndex];
+    this._saveAsSourcePath = path;
     const nameInput = document.getElementById('save-as-name');
-    if (nameInput) nameInput.value = tab.name.replace(/\.[^.]+$/, '');
+    if (nameInput) nameInput.value = name.replace(/\.[^.]+$/, '');
+    const formatSel = document.getElementById('save-as-format');
+    if (formatSel) {
+      const extMatch = name.match(/\.([^.]+)$/);
+      const ext = extMatch ? extMatch[1].toLowerCase() : 'md';
+      const hasOption = Array.prototype.some.call(formatSel.options, (o) => o.value === ext);
+      formatSel.value = hasOption ? ext : 'md';
+    }
     const title = document.getElementById('save-as-title');
-    if (title) title.textContent = this._saveAsMode === 'copy' ? 'Save a Copy' : 'Save As';
+    if (title) title.textContent = this._saveAsMode === 'copy' ? this._t('saveAs.titleCopy') : this._t('saveAs.title');
     const confirmBtn = document.getElementById('save-as-confirm');
-    if (confirmBtn) confirmBtn.textContent = this._saveAsMode === 'copy' ? 'Save Copy' : 'Save';
+    if (confirmBtn) confirmBtn.textContent = this._saveAsMode === 'copy' ? this._t('saveAs.confirmCopy') : this._t('saveAs.confirm');
     const hint = document.getElementById('save-as-hint');
     if (hint) hint.textContent = this._saveAsMode === 'copy'
-      ? 'Saves a duplicate into your vault — you keep editing the original note.'
-      : 'Saves into your vault, next to the current note.';
+      ? this._t('saveAs.hintCopy')
+      : this._t('saveAs.hint');
     document.getElementById('save-as-modal').classList.remove('hidden');
     if (nameInput) { nameInput.focus(); nameInput.select(); }
   },
@@ -2396,57 +2535,82 @@ const App = {
   },
 
   async confirmSaveAs() {
-    if (this.activeTabIndex < 0) return;
-    this._syncCurrentTabContent();
-    const tab = this.openTabs[this.activeTabIndex];
+    const sourcePath = this._saveAsSourcePath;
+    if (!sourcePath) return;
+
+    // If the right-clicked (or toolbar) note is the currently open tab, use
+    // its live in-memory content (including unsaved edits); otherwise read
+    // straight from disk. This is what lets Save As/Save a Copy work from a
+    // file-tree right-click on a note that isn't even open.
+    const activeTab = this.activeTabIndex >= 0 ? this.openTabs[this.activeTabIndex] : null;
+    const isOpenTab = activeTab && activeTab.path === sourcePath;
+    let content;
+    if (isOpenTab) {
+      this._syncCurrentTabContent();
+      content = activeTab.content;
+    } else {
+      content = await window.xo.readFile(sourcePath);
+      if (content === null || content === undefined) {
+        this.updateStatusMessage(this._t('status.couldNotRead', sourcePath.split(/[\\/]/).pop()));
+        return;
+      }
+    }
+
     const nameInput = document.getElementById('save-as-name');
     const formatSel = document.getElementById('save-as-format');
     let name = (nameInput ? nameInput.value : '').trim().replace(/[<>:"/\\|?*]/g, '');
     const format = formatSel ? formatSel.value : 'md';
-    if (!name) { this.updateStatusMessage('Enter a file name'); return; }
+    if (!name) { this.updateStatusMessage(this._t('status.enterFileName')); return; }
 
-    // Save next to the current note if it lives in the vault, else vault root
+    // Save next to the source note if it lives in the vault, else vault root
     let dir = this.vaultPath;
-    const lastSep = Math.max(tab.path.lastIndexOf('/'), tab.path.lastIndexOf('\\'));
+    const lastSep = Math.max(sourcePath.lastIndexOf('/'), sourcePath.lastIndexOf('\\'));
     if (lastSep >= 0) {
-      const tabDir = tab.path.substring(0, lastSep);
-      if (tabDir.startsWith(this.vaultPath)) dir = tabDir;
+      const sourceDir = sourcePath.substring(0, lastSep);
+      if (sourceDir.startsWith(this.vaultPath)) dir = sourceDir;
     }
     const filePath = dir + '/' + name + '.' + format;
 
     // Don't silently overwrite an existing file
     try {
       const exists = await window.xo.fileExists(filePath);
-      if (exists && !confirm(name + '.' + format + ' already exists. Overwrite it?')) return;
+      if (exists && !confirm(this._t('confirm.overwriteFile', name + '.' + format))) return;
     } catch (e) { }
 
     let ok = false;
     const title = name;
     if (format === 'md') {
-      ok = await window.xo.writeFile(filePath, tab.content);
+      ok = await window.xo.writeFile(filePath, content);
     } else if (format === 'txt') {
-      ok = await window.xo.writeFile(filePath, this._markdownToPlainText(tab.content));
+      ok = await window.xo.writeFile(filePath, this._markdownToPlainText(content));
     } else if (format === 'html') {
-      ok = await window.xo.writeFile(filePath, this._buildExportHtml(title, tab.content));
+      ok = await window.xo.writeFile(filePath, this._buildExportHtml(title, content));
     } else if (format === 'xml') {
-      ok = await window.xo.writeFile(filePath, this._buildExportXml(title, tab.content));
+      ok = await window.xo.writeFile(filePath, this._buildExportXml(title, content));
     } else if (format === 'json') {
       ok = await window.xo.writeFile(filePath, JSON.stringify({
         title: title,
         exported: new Date().toISOString(),
         format: 'markdown',
-        content: tab.content
+        content: content
       }, null, 2));
     } else if (format === 'pdf') {
-      this.updateStatusMessage('Exporting PDF…');
-      ok = await window.xo.exportPdf(this._buildExportHtml(title, tab.content, true), filePath);
+      this.updateStatusMessage(this._t('status.exportingPdf'));
+      ok = await window.xo.exportPdf(this._buildExportHtml(title, content, true), filePath);
+    } else {
+      // Every other file type in the list (.py, .cpp, .sql, .yaml, etc.) is
+      // just a plain-text save under that extension — no per-language
+      // syntax awareness, just picking the file type like Notepad++'s
+      // Save As dropdown does.
+      ok = await window.xo.writeFile(filePath, this._markdownToPlainText(content));
     }
 
     this.closeSaveAsModal();
     const wasCopy = this._saveAsMode === 'copy';
     this._saveAsMode = 'switch';
+    this._saveAsSourcePath = null;
     if (ok) {
-      this.updateStatusMessage(wasCopy ? 'Copy saved as ' + name + '.' + format : 'Saved as ' + name + '.' + format);
+      this.updateStatusMessage(wasCopy ? this._t('status.copySavedAs', name + '.' + format) : this._t('status.savedAs', name + '.' + format));
       await this.loadFileTree();
       // Open editable text formats in a new tab — unless this was a "Save a
       // Copy", in which case we deliberately keep editing the original note.
@@ -2454,7 +2618,7 @@ const App = {
         this.openFile(filePath, name + '.' + format);
       }
     } else {
-      this.updateStatusMessage('Save failed for ' + name + '.' + format);
+      this.updateStatusMessage(this._t('status.saveFailedFor', name + '.' + format));
     }
   },
 
@@ -2561,7 +2725,7 @@ const App = {
 
   closeTab(index) {
     const tab = this.openTabs[index];
-    if (tab.unsaved && !confirm('Unsaved changes in ' + tab.name + '. Close anyway?')) return;
+    if (tab.unsaved && !confirm(this._t('confirm.unsavedCloseTab', tab.name))) return;
     this.openTabs.splice(index, 1);
     if (this.openTabs.length === 0) {
       this.activeTabIndex = -1;
@@ -3678,7 +3842,7 @@ const App = {
     try {
       let content = await window.xo.readFile(filePath);
       if (content === null || content === undefined) {
-        this.updateStatusMessage('Could not read ' + fileName);
+        this.updateStatusMessage(this._t('status.couldNotRead', fileName));
         return;
       }
       // Strip BOM if present so first line renders correctly
@@ -3744,11 +3908,11 @@ const App = {
         if (!url) return;
         if (e.ctrlKey || e.metaKey) {
           window.xo.openExternal(url);
-          this.updateStatusMessage('Opening ' + url);
+          this.updateStatusMessage(this._t('status.openingUrl', url));
           hideTooltip();
         } else {
           // Plain click: hint the user how to open it
-          showTooltip(a, 'Ctrl+Click to open', true);
+          showTooltip(a, this._t('editor.ctrlClickToOpen'), true);
         }
       });
 
@@ -3820,7 +3984,7 @@ const App = {
           const results = await window.xo.searchFiles(link.url);
           const match = (results || []).find(r => r.nameMatch);
           if (match) this.openFile(match.path, match.name);
-          else this.updateStatusMessage('Note "' + link.url + '" not found');
+          else this.updateStatusMessage(this._t('status.noteNotFound', link.url));
         }
       });
       container.appendChild(div);
@@ -3860,6 +4024,26 @@ const App = {
     const folderPath = this.vaultPath + '/' + name;
     await window.xo.createFolder(folderPath);
     await this.loadFileTree();
+  },
+
+  // "Open" button in the Files panel toolbar — same end result as dragging a
+  // file in from outside the app: pick any file from disk, copy it into the
+  // folder currently being viewed, then open it.
+  async openFileToImport() {
+    const srcPath = await window.xo.selectFileToImport();
+    if (!srcPath) return;
+    const destDir = this.currentFolderPath || this.vaultPath;
+    try {
+      const destPath = await window.xo.copyExternalItem(srcPath, destDir);
+      if (!destPath) { this.updateStatusMessage(this._t('status.importFailed')); return; }
+      await this.loadFileTree();
+      const name = destPath.split(/[\\/]/).pop();
+      this.updateStatusMessage(this._t('status.imported', name));
+      this.openFile(destPath, name);
+    } catch (e) {
+      console.error('Open/import error:', e);
+      this.updateStatusMessage(this._t('status.importFailed'));
+    }
   },
 
   async startRenameInline(div, item) {
@@ -3977,11 +4161,11 @@ const App = {
 
   clearRecent() {
     if (this.recentFiles.length === 0) return;
-    if (!confirm('Clear all recent notes? This only clears the list, your files are untouched.')) return;
+    if (!confirm(this._t('confirm.clearRecent'))) return;
     this.recentFiles = [];
     this.saveSettings();
     this.renderRecent();
-    this.updateStatusMessage('Recent notes cleared');
+    this.updateStatusMessage(this._t('status.recentNotesCleared'));
   },
 
   toggleStar(filePath) {
@@ -4009,7 +4193,7 @@ const App = {
     const status = document.getElementById('status-text');
     if (!status) return;
     status.textContent = message;
-    setTimeout(() => { status.textContent = 'Ready'; }, 3000);
+    setTimeout(() => { status.textContent = this._t('status.ready'); }, 3000);
   },
 
   showContextMenu(x, y, item) {
@@ -4051,11 +4235,11 @@ const App = {
       }
       case 'delete': {
         if (this.settings.confirmDelete) {
-          if (!confirm('Delete ' + item.name + '?')) break;
+          if (!confirm(this._t('confirm.deleteItem', item.name))) break;
         }
         try {
           await window.xo.deleteItem(item.path);
-          this.updateStatusMessage('Deleted');
+          this.updateStatusMessage(this._t('status.deleted'));
           await this.loadFileTree();
         } catch (e) { console.error('Delete error:', e); }
         break;
@@ -4131,7 +4315,7 @@ const App = {
           const baseName = item.name.replace(/(\.[^.]+)$/, '');
           const newPath = item.path.replace(item.name, baseName + ' copy' + ext);
           await window.xo.writeFile(newPath, content || '');
-          this.updateStatusMessage('Duplicated');
+          this.updateStatusMessage(this._t('status.duplicated'));
           await this.loadFileTree();
         } catch (e) { console.error('Duplicate error:', e); }
         break;
@@ -4148,25 +4332,25 @@ const App = {
         } else {
           // Not the open tab, so there are no live edits to persist —
           // what's on disk already matches what's in the vault.
-          this.updateStatusMessage('Already up to date');
+          this.updateStatusMessage(this._t('status.alreadyUpToDate'));
         }
         break;
       }
       case 'save-as': {
         if (item.isDirectory) break;
-        await this._sidebarSaveAs(item, false);
+        this.openSaveAsModal('switch', item);
         break;
       }
       case 'save-copy': {
         if (item.isDirectory) break;
-        await this._sidebarSaveAs(item, true);
+        this.openSaveAsModal('copy', item);
         break;
       }
       case 'copy-path': {
         try {
           await navigator.clipboard.writeText(item.path);
-          this.updateStatusMessage('Path copied');
-        } catch (e) { this.updateStatusMessage('Copy failed'); }
+          this.updateStatusMessage(this._t('status.pathCopied'));
+        } catch (e) { this.updateStatusMessage(this._t('status.copyFailed')); }
         break;
       }
       case 'icon': {
@@ -4192,53 +4376,6 @@ const App = {
     this.hideContextMenu();
   },
 
-  // Save As / Save a Copy from the sidebar right-click menu. Works off the
-  // live editor content if `item` is the currently open tab (so unsaved
-  // edits aren't lost), otherwise reads the file fresh from disk. Keeps the
-  // same extension as the source file — format conversion stays a toolbar
-  // Save As (Ctrl+Shift+S) feature.
-  async _sidebarSaveAs(item, keepCurrent) {
-    const activeTab = this.activeTabIndex >= 0 ? this.openTabs[this.activeTabIndex] : null;
-    const isOpenTab = activeTab && activeTab.path === item.path;
-    let content;
-    if (isOpenTab) {
-      this._syncCurrentTabContent();
-      content = activeTab.content;
-    } else {
-      content = await window.xo.readFile(item.path);
-      if (content === null || content === undefined) {
-        this.updateStatusMessage('Could not read ' + item.name);
-        return;
-      }
-    }
-    const extMatch = item.name.match(/(\.[^.]+)$/);
-    const ext = extMatch ? extMatch[1] : '';
-    const baseName = item.name.replace(/(\.[^.]+)$/, '');
-    const promptDefault = baseName + (keepCurrent ? ' copy' : '');
-    const newBase = await window.xo.showInputDialog(keepCurrent ? 'Save a Copy' : 'Save As', 'File name:', promptDefault);
-    if (!newBase) return;
-    const cleanName = newBase.trim().replace(/[<>:"/\\|?*]/g, '');
-    if (!cleanName) { this.updateStatusMessage('Enter a file name'); return; }
-
-    const lastSep = Math.max(item.path.lastIndexOf('/'), item.path.lastIndexOf('\\'));
-    const dir = lastSep >= 0 ? item.path.substring(0, lastSep) : this.vaultPath;
-    const newPath = dir + '/' + cleanName + ext;
-
-    try {
-      const exists = await window.xo.fileExists(newPath);
-      if (exists && !confirm(cleanName + ext + ' already exists. Overwrite it?')) return;
-    } catch (e) { }
-
-    const ok = await window.xo.writeFile(newPath, content || '');
-    if (!ok) { this.updateStatusMessage('Save failed for ' + cleanName + ext); return; }
-
-    this.updateStatusMessage((keepCurrent ? 'Copy saved as ' : 'Saved as ') + cleanName + ext);
-    await this.loadFileTree();
-    // "Save As" moves you forward into the new file; "Save a Copy" leaves
-    // you exactly where you were.
-    if (!keepCurrent) this.openFile(newPath, cleanName + ext);
-  },
-
   quickCaptureSaveNew() {
     const textarea = document.getElementById('quick-capture-text');
     const content = textarea.value;
@@ -4248,7 +4385,7 @@ const App = {
     window.xo.writeFile(filePath, content);
     textarea.value = '';
     document.getElementById('quick-capture-modal').classList.add('hidden');
-    this.updateStatusMessage('Quick note saved');
+    this.updateStatusMessage(this._t('status.quickNoteSaved'));
     this.loadFileTree();
   },
 
@@ -4265,7 +4402,7 @@ const App = {
     }
     textarea.value = '';
     document.getElementById('quick-capture-modal').classList.add('hidden');
-    this.updateStatusMessage('Content appended');
+    this.updateStatusMessage(this._t('status.contentAppended'));
   },
 
   // ── Widgets ──
@@ -4942,9 +5079,32 @@ const App = {
   resetDashboardLayout() {
     this.settings.widgetPositions = {};
     this.settings.widgetSizes = {};
+    this.settings.dashboardShowCalendar = true;
+    this.settings.dashboardShowClocks = true;
     this.dashboardLocked = true;
     this.saveSettings();
     this.initDashboardWidgets();
+  },
+
+  // Per-widget minimum sizes, tall/wide enough that their actual content
+  // (the 6-row calendar grid, or a row of clock cards) always fits inside —
+  // this is what actually fixes the old bug where shrinking a widget too
+  // small left content taller than the box, so the border visually sliced
+  // through the middle of the date numbers instead of the box just stopping
+  // at a sane minimum.
+  _widgetMinSize(id) {
+    if (id === 'dashboard-calendar-widget') return { width: 260, height: 320 };
+    if (id === 'dashboard-clocks-widget') return { width: 200, height: 140 };
+    return { width: 150, height: 100 };
+  },
+
+  // Widgets that can be removed from the dashboard entirely (via the ✕ that
+  // appears on them while unlocked) — everything else (sticky notes have
+  // their own per-note remove) just resizes.
+  _removableWidgetSettingKey(id) {
+    if (id === 'dashboard-calendar-widget') return 'dashboardShowCalendar';
+    if (id === 'dashboard-clocks-widget') return 'dashboardShowClocks';
+    return null;
   },
 
   initDashboardWidgets() {
@@ -4962,18 +5122,54 @@ const App = {
     widgets.forEach(widget => {
       if (!widget.el) return;
 
-      const saved = this.settings.widgetPositions[widget.id];
+      // Removed via the ✕ button — stays hidden until "Reset dashboard
+      // layout" brings it back. This is independent of the theme in use,
+      // since it's driven by JS/settings, not CSS.
+      const visKey = this._removableWidgetSettingKey(widget.id);
+      if (visKey && this.settings[visKey] === false) {
+        widget.el.style.display = 'none';
+        return;
+      }
+      widget.el.style.display = '';
+
       const savedSize = this.settings.widgetSizes[widget.id];
 
-      if (savedSize && !this.dashboardLocked) {
+      // A custom size, once set, stays applied whether or not the dashboard
+      // is currently locked -- locking only removes the drag handle so you
+      // can't accidentally resize further, it no longer snaps the widget
+      // back to its default size.
+      if (savedSize) {
         widget.el.style.width = savedSize.width + 'px';
         widget.el.style.height = savedSize.height + 'px';
       }
 
+      // One lock (the 🔒/🔓 button on the dashboard) governs resizing AND
+      // removing every widget here — calendar, clocks, and sticky notes all
+      // behave the same way once unlocked.
       if (!this.dashboardLocked) {
         this._makeWidgetResizable(widget.el, widget.id);
+        if (visKey) this._makeWidgetRemovable(widget.el, widget.id, visKey);
       }
     });
+  },
+
+  // Small ✕ button in the corner of a widget, only present while the
+  // dashboard is unlocked. Hides the widget (rather than deleting any data)
+  // and persists that so it stays gone until "Reset dashboard layout".
+  _makeWidgetRemovable(el, id, visKey) {
+    if (el.querySelector('.dashboard-widget-remove-btn')) return; // already added
+    const btn = document.createElement('button');
+    btn.className = 'dashboard-widget-remove-btn';
+    btn.title = this._t('dashboard.removeWidget');
+    btn.innerHTML = '✕';
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.settings[visKey] = false;
+      this.saveSettings();
+      el.style.display = 'none';
+    });
+    el.style.position = 'relative';
+    el.appendChild(btn);
   },
 
   _makeWidgetResizable(el, id) {
@@ -4982,6 +5178,7 @@ const App = {
     el.style.position = 'relative';
     el.appendChild(handle);
 
+    const minSize = this._widgetMinSize(id);
     let isResizing = false;
     let startX, startY, startWidth, startHeight;
 
@@ -4998,8 +5195,8 @@ const App = {
       if (!isResizing) return;
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
-      const newWidth = Math.max(150, startWidth + dx);
-      const newHeight = Math.max(100, startHeight + dy);
+      const newWidth = Math.max(minSize.width, startWidth + dx);
+      const newHeight = Math.max(minSize.height, startHeight + dy);
       el.style.width = newWidth + 'px';
       el.style.height = newHeight + 'px';
     });
@@ -5027,69 +5224,31 @@ const App = {
     }
 
     if (this.dashboardLocked) {
+      // Only the drag handles and remove (✕) buttons come off -- the widget
+      // keeps whatever custom size/position it was left at, and stays
+      // visible if it's visible. Sizes are cleared and hidden widgets are
+      // brought back explicitly via "Reset dashboard layout", not just by
+      // locking.
       document.querySelectorAll('.dashboard-widgets > div, .dashboard-stickies').forEach(widget => {
-        widget.style.width = '';
-        widget.style.height = '';
-        const handles = widget.querySelectorAll('[style*="se-resize"]');
-        handles.forEach(h => h.remove());
+        widget.querySelectorAll('[style*="se-resize"]').forEach(h => h.remove());
+        widget.querySelectorAll('.dashboard-widget-remove-btn').forEach(b => b.remove());
       });
     } else {
       this.initDashboardWidgets();
     }
   },
 
-  // ── Left Rail Resize ──
+  // ── Left Rail ──
+  // The drag-to-resize handle that used to live on the rail's edge has been
+  // removed — it was the source of a long-standing bug where the rail would
+  // creep a little wider every time you collapsed and reopened it. The rail
+  // is a fixed width now (set in CSS), and the collapse/expand arrow's open
+  // position is a static `left: 200px` in CSS too, so there's no JS-tracked
+  // width left to ever drift.
   initLeftRailResize() {
     const leftRail = document.querySelector('.left-rail');
     if (!leftRail) return;
-    // The collapse/expand arrow sits outside the rail (a sibling), positioned
-    // with `left: <width>px` so it hugs the rail's right edge. It needs to
-    // track the rail's width live, otherwise resizing the rail leaves the
-    // arrow stuck at whatever width it last matched — visually "detached".
-    const toggleBtn = document.getElementById('btn-toggle-left-rail');
-
-    const handle = document.createElement('div');
-    handle.id = 'left-rail-resize-handle';
-    handle.style.cssText = 'position: absolute; right: -4px; top: 0; bottom: 0; width: 8px; cursor: col-resize; z-index: 100;';
-    leftRail.style.position = 'relative';
-    leftRail.appendChild(handle);
-
-    if (this.settings.leftRailWidth && this.settings.leftRailWidth !== 200) {
-      leftRail.style.width = this.settings.leftRailWidth + 'px';
-    }
-    if (toggleBtn) toggleBtn.style.left = leftRail.offsetWidth + 'px';
     this.syncWidgetsBarWidth();
-
-    let isResizing = false;
-    let startX, startWidth;
-
-    handle.addEventListener('mousedown', (e) => {
-      e.preventDefault();
-      isResizing = true;
-      startX = e.clientX;
-      startWidth = leftRail.offsetWidth;
-      document.body.style.cursor = 'col-resize';
-    });
-
-    document.addEventListener('mousemove', (e) => {
-      if (!isResizing) return;
-      const dx = e.clientX - startX;
-      const newWidth = Math.max(120, Math.min(300, startWidth + dx));
-      leftRail.style.width = newWidth + 'px';
-      if (toggleBtn) toggleBtn.style.left = newWidth + 'px';
-      this.syncWidgetsBarWidth();
-    });
-
-    document.addEventListener('mouseup', () => {
-      if (isResizing) {
-        isResizing = false;
-        document.body.style.cursor = '';
-        this.settings.leftRailWidth = leftRail.offsetWidth;
-        this.leftRailWidth = leftRail.offsetWidth;
-        this.saveSettings();
-        this.syncWidgetsBarWidth();
-      }
-    });
   },
 
   // The bottom-left widget bar (calendar/clocks) is `position: fixed` so it
@@ -5211,6 +5370,12 @@ const App = {
     // Update status (bottom-right)
     const upBtn = document.getElementById('btn-update-status');
     if (upBtn) upBtn.addEventListener('click', () => this.handleUpdateButtonClick());
+    // Right-click: always jump straight to "pick an older version", no
+    // matter what the button currently shows.
+    if (upBtn) upBtn.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      this.openUpdatePickerToVersionList();
+    });
 
     // Report a Bug (bottom-right) — opens a pre-filled GitHub issue
     const bugBtn = document.getElementById('btn-report-bug');
@@ -5256,7 +5421,7 @@ const App = {
     document.getElementById('btn-close').addEventListener('click', () => {
       const unsaved = this.openTabs.filter(t => t.unsaved);
       if (unsaved.length > 0) {
-        if (confirm('You have ' + unsaved.length + ' unsaved note(s). Save before closing?')) {
+        if (confirm(this._t('confirm.unsavedCloseApp', unsaved.length))) {
           this.openTabs.forEach(async t => { if (t.unsaved) await window.xo.writeFile(t.path, t.content); });
         }
       }
@@ -5266,7 +5431,7 @@ const App = {
     window.xo.onAppClosing(() => {
       const unsaved = this.openTabs.filter(t => t.unsaved);
       if (unsaved.length > 0) {
-        if (confirm('You have ' + unsaved.length + ' unsaved note(s). Save before closing?')) {
+        if (confirm(this._t('confirm.unsavedCloseApp', unsaved.length))) {
           unsaved.forEach(async t => await window.xo.writeFile(t.path, t.content));
         }
       }
@@ -5285,6 +5450,7 @@ const App = {
 
     // New file/folder
     document.getElementById('btn-new-file').addEventListener('click', () => this.createNewFile());
+    document.getElementById('btn-open-file').addEventListener('click', () => this.openFileToImport());
     document.getElementById('btn-new-folder').addEventListener('click', () => this.createNewFolder());
     document.getElementById('btn-quick-note').addEventListener('click', () => this.createQuickNote());
 
@@ -5461,9 +5627,12 @@ const App = {
       });
     }
 
-    // Search
+    // Search — live-as-you-type results, PLUS pressing Enter or clicking the
+    // magnifying glass icon jumps straight into the single closest match
+    // instead of just leaving the dropdown open.
     let searchTimer;
-    document.getElementById('search-input').addEventListener('input', (e) => {
+    const searchInputEl = document.getElementById('search-input');
+    searchInputEl.addEventListener('input', (e) => {
       clearTimeout(searchTimer);
       const q = e.target.value.trim();
       if (q.length < 2) {
@@ -5472,6 +5641,20 @@ const App = {
       }
       searchTimer = setTimeout(() => this.performSearch(q), 300);
     });
+    searchInputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        clearTimeout(searchTimer);
+        this.searchAndOpenBest(searchInputEl.value);
+      }
+    });
+    const searchIcon = document.getElementById('search-bar-icon');
+    if (searchIcon) {
+      searchIcon.addEventListener('click', () => {
+        clearTimeout(searchTimer);
+        this.searchAndOpenBest(searchInputEl.value);
+      });
+    }
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.search-bar')) {
         document.getElementById('search-results').classList.add('hidden');
@@ -5648,6 +5831,10 @@ const App = {
     // Auto-save toggle
     const ast = document.getElementById('auto-save-toggle');
     if (ast) ast.addEventListener('change', (e) => { this.settings.autoSave = e.target.checked; this.saveSettings(); });
+
+    // Language select
+    const langSel = document.getElementById('language-select');
+    if (langSel) langSel.addEventListener('change', (e) => { this.setLanguage(e.target.value); });
 
     // Show extensions / confirm delete
     const se = document.getElementById('show-extensions');
@@ -5953,7 +6140,7 @@ const App = {
     const refreshBtn = document.getElementById('btn-refresh-tree');
     if (refreshBtn) refreshBtn.addEventListener('click', () => {
       this.loadFileTree();
-      this.updateStatusMessage('Refreshed');
+      this.updateStatusMessage(this._t('status.refreshed'));
     });
 
     // Sticky notes/tasks
@@ -5985,7 +6172,7 @@ const App = {
         for (const file of e.dataTransfer.files) {
           if (file.path) await window.xo.copyExternalItem(file.path, this.vaultPath);
         }
-        this.updateStatusMessage('Files imported into vault — open them from the sidebar');
+        this.updateStatusMessage(this._t('status.filesImportedOpenFromSidebar'));
         await this.loadFileTree();
         this.renderSpaces();
       });
@@ -6013,7 +6200,7 @@ const App = {
             await window.xo.copyExternalItem(file.path, this.vaultPath);
           }
         }
-        this.updateStatusMessage('Files imported');
+        this.updateStatusMessage(this._t('status.filesImported'));
         await this.loadFileTree();
         this.renderSpaces();
       });
@@ -6030,13 +6217,34 @@ const App = {
     });
   },
 
+  // Pressing Enter or clicking the magnifying glass — jumps straight into
+  // the single closest match (results are already ranked by the fuzzy
+  // scorer in main.js) instead of just showing the live dropdown.
+  async searchAndOpenBest(rawQuery) {
+    const q = (rawQuery || '').trim();
+    if (!q) return;
+    try {
+      const matches = await window.xo.searchFiles(q);
+      const results = document.getElementById('search-results');
+      if (matches.length === 0) {
+        this.updateStatusMessage(this._t('search.noResultsFor', q));
+        if (results) results.classList.add('hidden');
+        return;
+      }
+      if (results) results.classList.add('hidden');
+      this.openFile(matches[0].path, matches[0].name);
+    } catch (e) {
+      console.error('Search error:', e);
+    }
+  },
+
   async performSearch(q) {
     const results = document.getElementById('search-results');
     if (!results) return;
     try {
       const matches = await window.xo.searchFiles(q);
       if (matches.length === 0) {
-        results.innerHTML = '<div class="search-result-item"><div class="search-result-name">No results found</div></div>';
+        results.innerHTML = '<div class="search-result-item"><div class="search-result-name">' + this._t('search.noResultsFound') + '</div></div>';
       } else {
         results.innerHTML = matches.map(m =>
           '<div class="search-result-item" data-path="' + m.path + '" data-name="' + m.name + '">' +

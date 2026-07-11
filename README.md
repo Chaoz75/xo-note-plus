@@ -10,8 +10,10 @@ XO NOTE+ is a desktop note-taking app built around a simple idea: writing softwa
 
 - **Local-first vault** — your notes are plain `.md`/`.txt` files in a folder you choose. No account, no cloud sync, nothing leaves your machine.
 - **Markdown editor** — rich formatting toolbar, headings, tables, code blocks, checklists, and both rich and preview editing modes.
-- **File management** — a sidebar file tree with drag-and-drop import, tabs for multiple open notes, full-text search, starred and recent notes, and Save / Save As / Save a Copy (including PDF export).
-- **Home dashboard** — a landing screen with a calendar, multi-timezone clocks, sticky notes, sticky tasks, a daily motivational quote, and an instant one-click "Quick Note."
+- **File management** — a sidebar file tree with drag-and-drop import, an "Open" button to pull in any existing file from elsewhere on your computer, tabs for multiple open notes, starred and recent notes, and Save / Save As / Save a Copy from either the toolbar or a file's right-click menu (including PDF and 40+ other export formats).
+- **Smart search** — searches file names and file contents together with fuzzy matching, and pressing Enter or clicking the magnifying glass jumps straight to the closest match.
+- **Multi-language interface** — English, Spanish, French, German, and Russian, auto-detected from your system language or set manually in Settings.
+- **Home dashboard** — a landing screen with a calendar, multi-timezone clocks, sticky notes, sticky tasks, a daily motivational quote, and an instant one-click "Quick Note." The calendar and clock widgets can be resized or removed entirely with one lock/unlock button, on every dashboard theme.
 - **10 dashboard themes** — Classic, Midnight Command, Focus Flow, Mission Control, Horizon, plus five "+" abstract themes (Aurora+, Neon District+, Zen Garden+, Retro Terminal+, Glass Morphic+).
 - **24+ color themes**, including a full **Custom Theme Builder** (solid or gradient backgrounds, direction/spread controls, custom accent color) that you can export to a file and import again on another install.
 - **Deep accent controls** — accent color presets, brightness, a separate outline color, and an optional two-color gradient, with a live preview box so you can see changes instantly.

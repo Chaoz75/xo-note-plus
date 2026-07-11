@@ -32,7 +32,7 @@
      own row instead of squeezing every clock too narrow to read */
   flex: 1 1 calc(33.333% - 4px);
   min-width: 0;
-  padding: 8px 4px;
+  padding: 6px 2px;
   background: var(--bg-tertiary);
   border-radius: 8px;
   border: 1px solid var(--border);
@@ -40,7 +40,14 @@
   box-sizing: border-box;
   overflow: hidden;
 }
-.clock-widget .clock-time { white-space: nowrap; }
+/* The 3-up row is the tightest fit -- shrink the clock face and drop the
+   letter-spacing just for that layout so "12:34 PM" always fits inside the
+   box instead of getting silently clipped by the overflow:hidden above. */
+.clock-widget .clock-time {
+  white-space: nowrap;
+  font-size: 9px;
+  letter-spacing: 0;
+}
 .clock-widget:hover {
   border-color: var(--border-light);
   box-shadow: 0 0 10px var(--accent-dim);

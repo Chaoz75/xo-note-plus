@@ -411,9 +411,52 @@ ipcMain.handle('get-file-stats', async (event, filePath) => {
   } catch (e) { return null; }
 });
 
+// Extensions we'll actually try to read and search the CONTENTS of — this
+// mirrors the Save As format list (minus binary formats like .pdf). Every
+// file type, including ones not in this list, is still searchable by NAME;
+// this just controls whether we also peek inside for a text match.
+const SEARCHABLE_TEXT_EXTENSIONS = new Set([
+  'md', 'txt', 'html', 'xml', 'json',
+  'yaml', 'yml', 'toml', 'csv', 'ini', 'properties', 'tex', 'css', 'scss', 'sql',
+  'c', 'cpp', 'cs', 'java', 'py', 'js', 'ts', 'php', 'rb', 'go', 'rs', 'swift',
+  'kt', 'm', 'pl', 'lua', 'r', 'hs', 'scala', 'dart', 'ex', 'erl', 'scm', 'd',
+  'nim', 'f90', 'pas', 'asm', 'vhd', 'v',
+  'sh', 'bat', 'ps1', 'au3', 'ahk'
+]);
+
+// Simple fuzzy scorer used for both filenames and content lines — higher is
+// better, null means "not a match at all". Rewards exact/prefix/substring
+// matches most, but still finds typo-tolerant / out-of-order matches (e.g.
+// "mtg notes" matching "Meeting Notes") via a subsequence fallback, similar
+// to how VS Code's Ctrl+P "closest match" search feels.
+function fuzzyScore(text, query) {
+  if (!query) return 0;
+  const t = text.toLowerCase();
+  const q = query.toLowerCase();
+  if (t === q) return 1000;
+  if (t.startsWith(q)) return 900 - Math.min(200, t.length - q.length);
+  const idx = t.indexOf(q);
+  if (idx !== -1) return 700 - Math.min(300, idx * 2);
+  // Subsequence fuzzy fallback: every character of q must appear in order
+  // somewhere in t, gaps between matched characters count against the score.
+  let ti = 0, qi = 0, gaps = 0, firstMatch = -1, lastMatch = -1;
+  while (ti < t.length && qi < q.length) {
+    if (t[ti] === q[qi]) {
+      if (firstMatch === -1) firstMatch = ti;
+      if (lastMatch !== -1) gaps += (ti - lastMatch - 1);
+      lastMatch = ti;
+      qi++;
+    }
+    ti++;
+  }
+  if (qi < q.length) return null; // not every character was found in order
+  return 400 - Math.min(350, gaps * 4) - Math.min(40, firstMatch);
+}
+
 ipcMain.handle('search-files', async (event, query) => {
-  if (!vaultPath || !query) return [];
+  if (!vaultPath || !query || !query.trim()) return [];
   const results = [];
+
   function searchDir(dir) {
     try {
       const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -422,51 +465,96 @@ ipcMain.handle('search-files', async (event, query) => {
         const fullPath = path.join(dir, entry.name);
         if (entry.isDirectory()) {
           searchDir(fullPath);
-        } else if (entry.name.endsWith('.md') || entry.name.endsWith('.txt')) {
-          const nameMatch = entry.name.toLowerCase().includes(query.toLowerCase());
-          let contentMatch = false;
-          let matchLine = '';
+          continue;
+        }
+
+        const nameScore = fuzzyScore(entry.name, query);
+        let contentScore = null;
+        let matchLine = '';
+
+        const ext = (entry.name.match(/\.([^.]+)$/) || [, ''])[1].toLowerCase();
+        if (SEARCHABLE_TEXT_EXTENSIONS.has(ext)) {
           try {
-            const content = fs.readFileSync(fullPath, 'utf-8');
-            const lines = content.split('\n');
-            for (const line of lines) {
-              if (line.toLowerCase().includes(query.toLowerCase())) {
-                contentMatch = true;
-                matchLine = line.trim().substring(0, 120);
-                break;
+            const stat = fs.statSync(fullPath);
+            if (stat.size <= 4 * 1024 * 1024) { // skip anything oddly huge
+              const content = fs.readFileSync(fullPath, 'utf-8');
+              const lines = content.split('\n');
+              let bestLineScore = null;
+              for (const line of lines) {
+                if (!line.trim()) continue;
+                const s = fuzzyScore(line, query);
+                if (s !== null && (bestLineScore === null || s > bestLineScore)) {
+                  bestLineScore = s;
+                  matchLine = line.trim().substring(0, 120);
+                  if (s >= 700) break; // good enough, stop scanning this file
+                }
               }
+              contentScore = bestLineScore;
             }
           } catch (e) { }
-          if (nameMatch || contentMatch) {
-            results.push({
-              name: entry.name,
-              path: fullPath,
-              relativePath: path.relative(vaultPath, fullPath),
-              nameMatch,
-              contentMatch,
-              matchLine
-            });
-          }
+        }
+
+        if (nameScore !== null || contentScore !== null) {
+          // Filename matches count for more than a content match at the same
+          // fuzziness level — finding the right note by its title is usually
+          // what "closest match" means to someone typing in the search bar.
+          const combinedScore = Math.max(
+            nameScore !== null ? nameScore + 50 : -Infinity,
+            contentScore !== null ? contentScore : -Infinity
+          );
+          results.push({
+            name: entry.name,
+            path: fullPath,
+            relativePath: path.relative(vaultPath, fullPath),
+            nameMatch: nameScore !== null,
+            contentMatch: contentScore !== null,
+            matchLine,
+            score: combinedScore
+          });
         }
       }
     } catch (e) { }
   }
+
   searchDir(vaultPath);
+  results.sort((a, b) => b.score - a.score);
   return results.slice(0, 50);
 });
 
 // Custom input dialog (replaces broken prompt() in Electron)
+//
+// Security note: this window used to run with nodeIntegration on and
+// contextIsolation off, and pasted `title`/`label` straight into its HTML
+// unescaped. Every call site today only ever passes hardcoded strings
+// ('New File', 'Insert Link', etc), so it wasn't reachable with attacker
+// data in practice -- but that made it a landmine for the next person who
+// wires a filename or note content through here. Locked down for real:
+// nodeIntegration off, contextIsolation on via a dedicated preload, and
+// every interpolated value HTML-escaped.
 ipcMain.handle('show-input-dialog', async (event, title, label, defaultValue) => {
   return new Promise((resolve) => {
+    const uid = 'dlg-' + Date.now() + '-' + Math.random().toString(36).slice(2);
     const dlg = new BrowserWindow({
       width: 420, height: 185,
       parent: mainWindow, modal: true,
       frame: false, resizable: false,
       backgroundColor: '#13131d',
-      webPreferences: { nodeIntegration: true, contextIsolation: false }
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        preload: path.join(__dirname, 'input-dialog-preload.js'),
+        additionalArguments: ['--dlg-channel=' + uid]
+      }
     });
-    const uid = 'dlg-' + Date.now();
-    const escaped = (defaultValue || '').replace(/\\/g,'\\\\').replace(/"/g,'&quot;');
+    const escapeHtml = (s) => String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+    const safeTitle = escapeHtml(title);
+    const safeLabel = escapeHtml(label);
+    const safeDefault = escapeHtml(defaultValue || '');
     const html = `<!DOCTYPE html><html><head><style>
       *{margin:0;padding:0;box-sizing:border-box}
       body{font-family:'Segoe UI',sans-serif;background:#13131d;color:#e4e4ef;padding:24px;display:flex;flex-direction:column;height:100vh}
@@ -479,20 +567,19 @@ ipcMain.handle('show-input-dialog', async (event, title, label, defaultValue) =>
       .ok{background:#4fc3f7;color:#000;font-weight:600}.ok:hover{filter:brightness(1.15)}
       .cancel{background:#1e1e2e;color:#9999b3;border:1px solid #2a2a40}.cancel:hover{background:#252540}
     </style></head><body>
-      <h3>${title}</h3><label>${label}</label>
-      <input id="inp" type="text" value="${escaped}" autofocus>
+      <h3>${safeTitle}</h3><label>${safeLabel}</label>
+      <input id="inp" type="text" value="${safeDefault}" autofocus>
       <div class="btns">
         <button class="cancel" onclick="send(null)">Cancel</button>
         <button class="ok" onclick="send(document.getElementById('inp').value)">OK</button>
       </div>
       <script>
-        const {ipcRenderer}=require('electron');
         document.getElementById('inp').select();
         document.getElementById('inp').addEventListener('keydown',e=>{
           if(e.key==='Enter')send(document.getElementById('inp').value);
           if(e.key==='Escape')send(null);
         });
-        function send(v){ipcRenderer.send('${uid}',v);window.close()}
+        function send(v){window.dlgAPI.send(v);window.close()}
       </script></body></html>`;
     dlg.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
     ipcMain.once(uid, (ev, val) => resolve(val));
@@ -557,11 +644,17 @@ ipcMain.handle('start-download-latest', () => {
 // "Choose Other Version" picker can show the full history, including
 // versions older than what's currently installed.
 ipcMain.handle('list-releases', async () => {
-  if (!GH_OWNER || !GH_REPO) return [];
+  // Returns { releases, error } instead of just an array -- a genuinely
+  // empty release list and a failed request used to look identical to the
+  // user ("No releases found" either way), which made a rate-limit hit or a
+  // network hiccup indistinguishable from there really being nothing there.
+  if (!GH_OWNER || !GH_REPO) {
+    return { releases: [], error: "This build isn't configured with a GitHub repo to check." };
+  }
   try {
     const res = await githubApiRequest('/repos/' + GH_OWNER + '/' + GH_REPO + '/releases?per_page=30');
     const releases = JSON.parse(res.body.toString('utf-8'));
-    return releases
+    const list = releases
       .filter(r => !r.draft)
       .map(r => {
         const exeAsset = (r.assets || []).find(a => a.name.toLowerCase().endsWith('.exe'));
@@ -578,9 +671,18 @@ ipcMain.handle('list-releases', async () => {
         };
       })
       .filter(r => r.assetId); // only versions that actually have a downloadable installer
+    return { releases: list, error: null };
   } catch (e) {
     console.error('list-releases failed:', e);
-    return [];
+    let message = "Couldn't load the release list from GitHub. Try again in a moment.";
+    if (/\s403\s/.test(' ' + e.message + ' ')) {
+      message = "GitHub's rate limit was hit for this connection — wait a bit and try again.";
+    } else if (/ENOTFOUND|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN/.test(e.message || '')) {
+      message = "Couldn't reach GitHub — check your internet connection and try again.";
+    } else if (/\s404\s/.test(' ' + e.message + ' ')) {
+      message = "GitHub couldn't find this repo's releases.";
+    }
+    return { releases: [], error: message };
   }
 });
 
@@ -686,10 +788,31 @@ ipcMain.handle('import-theme-file', async () => {
   }
 });
 
+// System language (for auto-detecting UI language on first launch) —
+// Electron's app.getLocale() returns a BCP 47 tag like "en-US" or "ru-RU";
+// the renderer just needs the base language code.
+ipcMain.handle('get-system-locale', () => {
+  try { return app.getLocale(); } catch (e) { return 'en'; }
+});
+
 ipcMain.handle('get-path-sep', () => path.sep);
 ipcMain.handle('join-path', (event, ...parts) => path.join(...parts));
 ipcMain.handle('dirname', (event, p) => path.dirname(p));
 ipcMain.handle('basename', (event, p) => path.basename(p, path.extname(p)));
+
+// "Open" button in the Files panel toolbar — lets you pick any file from
+// anywhere on disk to bring into the currently viewed vault folder (same
+// end result as dragging a file in from Explorer, just via a dialog).
+ipcMain.handle('select-file-to-import', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'Open File...',
+    properties: ['openFile']
+    // No extension filter — the vault can hold any file type now (Save As
+    // supports ~45 formats), so Open shouldn't be more restrictive than that.
+  });
+  if (result.canceled || !result.filePaths[0]) return null;
+  return result.filePaths[0];
+});
 
 // Copy external file/folder into vault
 ipcMain.handle('copy-external-item', async (event, srcPath, destDir) => {

@@ -9,6 +9,67 @@
 
 const CHANGELOG = [
   {
+    version: '1.2.6',
+    date: '2026-07-11',
+    changes: [
+      'Security hardening: the small popup window used for "New File," "New Folder," and "Insert Link" used to run with full Node.js access enabled inside itself. Every place that opens it only ever sends fixed text, so this wasn\'t something a note or a file could trigger — but it\'s locked down properly now (same safe settings as the rest of the app) so it can never become a problem later.',
+      'No visible changes to how anything looks or works — this release is a code-level safety pass only.'
+    ]
+  },
+  {
+    version: '1.2.5',
+    date: '2026-07-10',
+    changes: [
+      'Fixed: right-clicking the update button to browse older versions always said "No releases found," even when releases were actually published on GitHub. The check was silently treating any failed request (a rate limit, a network hiccup, etc.) the same as there truly being nothing there.',
+      'The version picker now shows a specific reason when the list can\'t load (rate limited, no internet, etc.) along with a Retry button, instead of a flat "No releases found."'
+    ]
+  },
+  {
+    version: '1.2.4',
+    date: '2026-07-10',
+    changes: [
+      'Removed the drag-to-resize handle on the left sidebar — it was the cause of the sidebar growing a little wider every time you closed and reopened it. The sidebar is a fixed width now, so that bug can\'t happen anymore.',
+      'Removed the "Home Settings" section from Settings > Widgets. The calendar and clock widgets on the home dashboard are now controlled by the same 🔒/🔓 lock button as everything else on the dashboard — one lock for resizing and removing all of it.',
+      'Added a ✕ button to the calendar and clock widgets on the home dashboard — while unlocked, you can remove either one entirely. "Reset dashboard layout" brings them back. Works the same across all 10 dashboard themes.',
+      'Fixed the bottom-left timezone clocks not fitting inside their boxes when three are shown in a row — the time text is now sized to actually fit instead of getting silently clipped.',
+      'Updated the README with the latest feature list (multi-language support, revamped search, dashboard widget improvements, and more).'
+    ]
+  },
+  {
+    version: '1.2.3',
+    date: '2026-07-09',
+    changes: [
+      'Added Spanish, French, and German, and finished translating the entire app — right-click menus, status bar messages, confirmation dialogs, and every remaining Settings tab (Fonts, General, Widgets) now switch language along with everything else. Choose from Settings > General > Language: Auto, English, Español, Français, Deutsch, or Русский.',
+      'Fixed Russian not actually translating parts of the UI — those gaps are closed, and the same fix covers all five languages going forward.',
+      'Repositioned the "XO NOTE+ — XOS · XO SYSTEMS" bottom bar text to sit truly centered, no longer drifting off-center based on how much is in the corners next to it.',
+      'Revamped search: the magnifying glass icon (or hitting Enter) now jumps straight to the closest match instead of just leaving the dropdown open. Search now covers every file type the app can save (not just notes), uses fuzzy closest-match ranking, and still updates live as you type.',
+      'Fixed the calendar and clock widgets clipping through their own border when resized too small — they now stop at a sensible minimum size instead of letting the frame slice through the date numbers. Resizing a widget and then locking the dashboard now keeps that size instead of snapping back to default.',
+      'Added a "Home Settings" section to Settings > Widgets with a dedicated lock for the calendar and clock widgets\' resize handles, separate from the general dashboard edit lock.',
+      'Added an "Open..." button next to New Note in the Files panel — pick any file from your computer and it\'s copied straight into the folder you\'re viewing.',
+      'Fixed right-click Save As / Save a Copy on a note: it now opens the same dialog as the toolbar, with the full ~45-format dropdown, and works correctly whether or not that note is currently open.'
+    ]
+  },
+  {
+    version: '1.2.2',
+    date: '2026-07-09',
+    changes: [
+      'Added multi-language support: XO NOTE+ now auto-detects your Windows display language on first launch and switches the interface to match — Russian is supported alongside English for now, with more languages planned. Switch it anytime in Settings > General > Language (Auto / English / Русский), no restart needed.',
+      'Core UI text updated instantly when you change languages: titlebar, sidebar, file panel, dashboard, setup wizard, Settings (all tabs), the bottom-right bar, the Save As dialog, and the first-launch welcome tour are all fully translated. Changelog history and the Creators bios stay English-only for now.',
+      'Longer translated text (Russian labels run longer than English) now wraps and shrinks gracefully instead of clipping or spilling out of its container.',
+      'Massively expanded the Save As / Save a Copy file-type list — from 6 formats to roughly 45, covering data & config formats (YAML, TOML, CSV, INI, SQL, and more), most major programming languages (C, C++, C#, Java, Python, JavaScript, TypeScript, Go, Rust, Swift, and more), and scripting/shell formats (Bash, Batch, PowerShell, AutoHotkey). Any format without special handling now saves safely as plain text by default.'
+    ]
+  },
+  {
+    version: '1.2.1',
+    date: '2026-07-10',
+    changes: [
+      'Added: right-click the "Check for Updates" button in the bottom-right corner anytime to jump straight to picking an older version to install — no need to wait for an update to be available first.',
+      'Fixed the GitHub split-release bug for real this time: the auto-merge script only used to touch leftover DRAFT releases, but since updates started publishing instantly (no draft step), a split could produce two fully-published releases that both claim the same version — which the old check silently ignored. It now recognizes and merges those too.',
+      'Reorganized Settings > Appearance: the Custom Theme Builder now sits directly under the Theme grid, right below the "Custom" theme card it belongs to, instead of further down the page.',
+      'Expanded the first-launch welcome tour: it now actually creates and opens a real note live to show off Quick Note, points out the new tab it creates, and shows where Save / Save As / Save a Copy live in the toolbar. The demo note is automatically deleted once the tour ends or is skipped, so it never clutters a new vault.'
+    ]
+  },
+  {
     version: '1.2.0',
     date: '2026-07-09',
     changes: [

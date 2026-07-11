@@ -22,13 +22,13 @@
     <div class="setup-card">
       <img src="assets/logo-light.png" alt="XOS" class="setup-logo">
       <h1 class="brand-title">XO NOTE<span class="brand-plus">+</span></h1>
-      <p class="setup-subtitle">BY XO SYSTEMS</p>
-      <p class="setup-desc">Choose a folder on your computer to store your notes. This will be your vault — all your markdown files live here as real files you can browse in Explorer.</p>
+      <p class="setup-subtitle" data-i18n="setup.subtitle">BY XO SYSTEMS</p>
+      <p class="setup-desc" data-i18n="setup.desc">Choose a folder on your computer to store your notes. This will be your vault — all your markdown files live here as real files you can browse in Explorer.</p>
       <button id="btn-select-vault" class="btn-primary btn-lg">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-        Select Vault Folder
+        <span data-i18n="setup.selectVault">Select Vault Folder</span>
       </button>
-      <p class="setup-hint">You can change this later in Settings</p>
+      <p class="setup-hint" data-i18n="setup.hint">You can change this later in Settings</p>
     </div>
   </div>
 
@@ -38,7 +38,7 @@
     <!-- ── Title Bar ── -->
     <div class="titlebar" id="titlebar">
       <div class="titlebar-left">
-        <button class="titlebar-btn icon-btn" id="btn-home" title="Home" style="-webkit-app-region: no-drag;">
+        <button class="titlebar-btn icon-btn" id="btn-home" title="Home" data-i18n-title="titlebar.home" style="-webkit-app-region: no-drag;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
         </button>
         <img src="assets/logo-light.png" alt="XOS" class="titlebar-logo">
@@ -49,22 +49,22 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
         </button>
         <div class="search-bar" id="search-bar">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
-          <input type="text" id="search-input" placeholder="Search notes..." autocomplete="off">
+          <svg id="search-bar-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="cursor:pointer;" title="Search (Enter)" data-i18n-title="titlebar.searchGo"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+          <input type="text" id="search-input" placeholder="Search notes..." data-i18n-placeholder="titlebar.search.placeholder" autocomplete="off">
           <div id="search-results" class="search-results hidden"></div>
         </div>
       </div>
       <div class="titlebar-right">
-        <button class="titlebar-btn icon-btn" id="btn-settings" title="Settings">
+        <button class="titlebar-btn icon-btn" id="btn-settings" title="Settings" data-i18n-title="titlebar.settings">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path></svg>
         </button>
-        <button class="titlebar-btn icon-btn" id="btn-quick-capture" title="Quick Capture (Ctrl+Shift+N)">
+        <button class="titlebar-btn icon-btn" id="btn-quick-capture" title="Quick Capture (Ctrl+Shift+N)" data-i18n-title="titlebar.quickCapture">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>
         </button>
         <div class="titlebar-window-controls">
-          <button class="win-btn" id="btn-min" title="Minimize">─</button>
-          <button class="win-btn" id="btn-max" title="Maximize">□</button>
-          <button class="win-btn win-close" id="btn-close" title="Close">✕</button>
+          <button class="win-btn" id="btn-min" title="Minimize" data-i18n-title="titlebar.minimize">─</button>
+          <button class="win-btn" id="btn-max" title="Maximize" data-i18n-title="titlebar.maximize">□</button>
+          <button class="win-btn win-close" id="btn-close" title="Close" data-i18n-title="titlebar.close">✕</button>
         </div>
       </div>
     </div>
@@ -79,7 +79,7 @@
         <div class="rail-section">
           <div class="rail-header">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
-            <span>Spaces</span>
+            <span data-i18n="rail.spaces">Spaces</span>
           </div>
           <div id="workspace-list" class="rail-list"></div>
         </div>
@@ -87,7 +87,7 @@
         <div class="rail-section">
           <div class="rail-header">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-            <span>Starred</span>
+            <span data-i18n="rail.starred">Starred</span>
           </div>
           <div id="starred-list" class="rail-list"></div>
         </div>
@@ -95,7 +95,7 @@
         <div class="rail-section">
           <div class="rail-header">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-            <span>Recent</span>
+            <span data-i18n="rail.recent">Recent</span>
           </div>
           <div id="recent-list" class="rail-list"></div>
         </div>
@@ -103,7 +103,7 @@
         <div class="rail-section rail-bottom">
           <div class="rail-header clickable" id="btn-quick-note">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>
-            <span>QUICK NOTE</span>
+            <span data-i18n="rail.quickNote">QUICK NOTE</span>
           </div>
         </div>
 
@@ -116,18 +116,21 @@
       <!-- File Tree Panel -->
       <div class="file-panel" id="file-panel">
         <div class="file-panel-header">
-          <button class="icon-btn-sm" id="btn-back-folder" title="Back" style="display:none;">
+          <button class="icon-btn-sm" id="btn-back-folder" title="Back" data-i18n-title="filePanel.back" style="display:none;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"></path></svg>
           </button>
-          <span class="file-panel-title" id="file-panel-title">Files</span>
+          <span class="file-panel-title" id="file-panel-title" data-i18n="filePanel.title">Files</span>
           <div class="file-panel-actions">
-            <button class="icon-btn-sm" id="btn-new-file" title="New Note">
+            <button class="icon-btn-sm" id="btn-new-file" title="New Note" data-i18n-title="filePanel.newNote">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
             </button>
-            <button class="icon-btn-sm" id="btn-refresh-tree" title="Refresh Files">
+            <button class="icon-btn-sm" id="btn-open-file" title="Open..." data-i18n-title="filePanel.open">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h6l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"></path><path d="M2 10h20"></path></svg>
+            </button>
+            <button class="icon-btn-sm" id="btn-refresh-tree" title="Refresh Files" data-i18n-title="filePanel.refresh">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
             </button>
-            <button class="icon-btn-sm" id="btn-new-folder" title="New Folder">
+            <button class="icon-btn-sm" id="btn-new-folder" title="New Folder" data-i18n-title="filePanel.newFolder">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>
             </button>
           </div>
@@ -150,8 +153,8 @@
             <div class="dashboard-header">
               <div class="dashboard-welcome" id="dashboard-welcome"></div>
               <div class="dashboard-controls" style="position:absolute;top:10px;right:10px;display:flex;gap:6px;z-index:10;">
-                <button id="btn-dashboard-reset" style="background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-dim);opacity:0.5;" title="Reset dashboard layout">↺</button>
-                <button id="btn-dashboard-lock" style="background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-dim);opacity:0.5;" title="Toggle widget lock/unlock">🔒</button>
+                <button id="btn-dashboard-reset" style="background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-dim);opacity:0.5;" title="Reset dashboard layout" data-i18n-title="dashboard.resetLayout">↺</button>
+                <button id="btn-dashboard-lock" style="background:none;border:none;font-size:14px;cursor:pointer;color:var(--text-dim);opacity:0.5;" title="Toggle widget lock/unlock" data-i18n-title="dashboard.toggleLock">🔒</button>
               </div>
               <div class="dashboard-date-time">
                 <div class="dashboard-date" id="dashboard-date">Monday, March 16</div>
@@ -166,7 +169,7 @@
               <div class="dashboard-sticky-section">
                 <div class="sticky-header">
                   <button class="sticky-toggle-btn" id="btn-toggle-sticky-tasks" data-toggle-panel="sticky-tasks-panel">▼</button>
-                  <span class="sticky-section-title">QUICK TASKS</span>
+                  <span class="sticky-section-title" data-i18n="dashboard.quickTasks">QUICK TASKS</span>
                   <button class="sticky-add-btn" id="btn-add-sticky-task" title="Add Task">+</button>
                 </div>
                 <div class="sticky-panel" id="sticky-tasks-panel">
@@ -176,7 +179,7 @@
               <div class="dashboard-sticky-section">
                 <div class="sticky-header">
                   <button class="sticky-toggle-btn" id="btn-toggle-sticky-notes" data-toggle-panel="sticky-notes-panel">▼</button>
-                  <span class="sticky-section-title">QUICK NOTES</span>
+                  <span class="sticky-section-title" data-i18n="dashboard.quickNotes">QUICK NOTES</span>
                   <button class="sticky-add-btn" id="btn-add-sticky-note" title="Add Note">+</button>
                 </div>
                 <div class="sticky-panel" id="sticky-notes-panel">
@@ -185,7 +188,7 @@
               </div>
             </div>
             <div class="dashboard-shortcuts">
-              <h3>Keyboard Shortcuts</h3>
+              <h3 data-i18n="dashboard.shortcuts">Keyboard Shortcuts</h3>
               <div class="shortcuts-grid">
                 <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>N</kbd> New Note</div>
                 <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>P</kbd> Quick Search</div>
@@ -201,7 +204,7 @@
           <div class="welcome-screen" id="welcome-screen">
             <img src="assets/logo-light.png" alt="XOS" class="welcome-logo">
             <h2 class="brand-title">XO NOTE<span class="brand-plus">+</span></h2>
-            <p class="welcome-sub">Open a note from the sidebar or create a new one</p>
+            <p class="welcome-sub" data-i18n="welcome.sub">Open a note from the sidebar or create a new one</p>
             <div class="welcome-shortcuts">
               <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>N</kbd> New Note</div>
               <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>P</kbd> Quick Search</div>
@@ -394,28 +397,28 @@
     <!-- ── Bottom Bar ── -->
     <div class="bottom-bar">
       <div class="bottom-left">
-        <span id="status-text">Ready</span>
+        <span id="status-text" data-i18n="status.ready">Ready</span>
       </div>
       <div class="bottom-center">
         <span class="bottom-brand">XO NOTE+ — XOS · XO SYSTEMS</span>
       </div>
       <div class="bottom-right">
-        <button class="changelog-toggle-btn" id="btn-changelog" title="What's New">
+        <button class="changelog-toggle-btn" id="btn-changelog" title="What's New" data-i18n-title="bottomBar.whatsNew">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-          <span id="changelog-version-label">v1.2.0</span>
+          <span id="changelog-version-label">v1.2.6</span>
           <span class="changelog-dot hidden" id="changelog-dot"></span>
         </button>
-        <button class="changelog-toggle-btn" id="btn-creators" title="Creators">
+        <button class="changelog-toggle-btn" id="btn-creators" title="Creators" data-i18n-title="bottomBar.creators">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-          <span>Creators</span>
+          <span data-i18n="bottomBar.creators">Creators</span>
         </button>
-        <button class="changelog-toggle-btn" id="btn-update-status" title="Check for Updates">
+        <button class="changelog-toggle-btn" id="btn-update-status" title="Check for Updates" data-i18n-title="bottomBar.checkUpdates">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
           <span id="update-status-label">You're up to Date!</span>
         </button>
-        <button class="changelog-toggle-btn" id="btn-report-bug" title="Report a Bug">
+        <button class="changelog-toggle-btn" id="btn-report-bug" title="Report a Bug" data-i18n-title="bottomBar.reportBug">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="6" width="8" height="12" rx="4"></rect><path d="M12 2v4M8 9H4M8 14H3M8 18l-3 2M16 9h4M16 14h5M16 18l3 2M10 6V4a2 2 0 0 1 4 0v2"></path></svg>
-          <span>Report a Bug</span>
+          <span data-i18n="bottomBar.reportBug">Report a Bug</span>
         </button>
         <span id="word-count">0 words</span>
         <span id="char-count">0 chars</span>
@@ -500,21 +503,21 @@
     <div class="modal-overlay"></div>
     <div class="modal-content settings-content">
       <div class="modal-header">
-        <h2>Settings</h2>
+        <h2 data-i18n="settings.title">Settings</h2>
         <button class="icon-btn modal-close" id="settings-close">✕</button>
       </div>
       <div class="settings-body">
         <div class="settings-tabs">
-          <button class="settings-tab active" data-tab="appearance">Appearance</button>
-          <button class="settings-tab" data-tab="fonts">Fonts</button>
-          <button class="settings-tab" data-tab="general">General</button>
-          <button class="settings-tab" data-tab="widgets">Widgets</button>
+          <button class="settings-tab active" data-tab="appearance" data-i18n="settingsTab.appearance">Appearance</button>
+          <button class="settings-tab" data-tab="fonts" data-i18n="settingsTab.fonts">Fonts</button>
+          <button class="settings-tab" data-tab="general" data-i18n="settingsTab.general">General</button>
+          <button class="settings-tab" data-tab="widgets" data-i18n="settingsTab.widgets">Widgets</button>
         </div>
 
         <!-- Appearance Tab -->
         <div class="settings-panel active" id="tab-appearance">
           <div class="setting-group">
-            <label class="setting-label">Theme</label>
+            <label class="setting-label" data-i18n="appearance.theme">Theme</label>
             <div class="theme-grid" id="theme-grid">
               <button class="theme-card active" data-theme="theme-dark-default">
                 <div class="theme-preview" style="background: linear-gradient(135deg, #0a0a0f, #1a1a2e, #16213e);"></div>
@@ -627,68 +630,10 @@
             </div>
           </div>
 
-          <!-- Accent settings sit right under the Theme grid so they're easy to spot -->
-          <div class="setting-group">
-            <label class="setting-label">Accent Color</label>
-            <div class="accent-colors" id="accent-colors">
-              <button class="accent-dot active" data-accent="#4fc3f7" style="background:#4fc3f7;"></button>
-              <button class="accent-dot" data-accent="#81c784" style="background:#81c784;"></button>
-              <button class="accent-dot" data-accent="#ff8a65" style="background:#ff8a65;"></button>
-              <button class="accent-dot" data-accent="#ce93d8" style="background:#ce93d8;"></button>
-              <button class="accent-dot" data-accent="#fff176" style="background:#fff176;"></button>
-              <button class="accent-dot" data-accent="#ef5350" style="background:#ef5350;"></button>
-              <button class="accent-dot" data-accent="#ffffff" style="background:#ffffff;"></button>
-              <button class="accent-dot" data-accent="#ff4081" style="background:#ff4081;"></button>
-              <button class="accent-dot" data-accent="#00e5ff" style="background:#00e5ff;"></button>
-              <button class="accent-dot" data-accent="#76ff03" style="background:#76ff03;"></button>
-              <button class="accent-dot" data-accent="#ffd600" style="background:#ffd600;"></button>
-              <button class="accent-dot" data-accent="#ff6e40" style="background:#ff6e40;"></button>
-            </div>
-          </div>
-
-          <div class="setting-group">
-            <label class="setting-label">Accent Brightness</label>
-            <input type="range" id="accent-brightness-slider" min="0.6" max="1.4" step="0.05" value="1" class="setting-slider">
-            <span id="accent-brightness-label">100%</span>
-            <div class="setting-hint">Lightens or darkens your accent color independent of overall UI brightness</div>
-          </div>
-
-          <div class="setting-group">
-            <label class="setting-label">Accent Outline Color</label>
-            <input type="color" id="accent-outline-color" class="custom-color-input" value="#4fc3f7" title="Border/outline color">
-            <button class="btn-sm btn-secondary" id="btn-reset-accent-outline">Reset</button>
-            <div class="setting-hint">Separate color for borders and outlines around buttons, inputs, and panels — defaults to matching the accent color</div>
-          </div>
-
-          <div class="setting-group">
-            <label class="setting-label">Accent Gradient</label>
-            <label class="toggle-switch">
-              <input type="checkbox" id="accent-gradient-toggle">
-              <span class="toggle-slider"></span>
-            </label>
-            <div class="setting-hint">Uses a two-color gradient instead of a flat color for buttons and highlights</div>
-          </div>
-
-          <div class="setting-group hidden" id="accent-gradient-color2-group">
-            <label class="setting-label">Accent Gradient — 2nd Color</label>
-            <input type="color" id="accent-gradient-color2" class="custom-color-input" value="#ff8a65" title="Second gradient color">
-            <button class="btn-sm btn-secondary" id="btn-reset-accent-gradient-color2">Reset</button>
-            <div class="setting-hint">Defaults to a close tint of your accent color for a subtle blend. Pick your own for more contrast.</div>
-          </div>
-
-          <div class="setting-group">
-            <label class="setting-label">Preview</label>
-            <div class="accent-preview-box">
-              <button class="accent-preview-btn" type="button">Sample Button</button>
-              <div class="accent-preview-outline">Outline &amp; Border</div>
-              <span class="accent-preview-text">Accent Text</span>
-            </div>
-            <div class="setting-hint">Live preview of your accent color, brightness, outline, and gradient settings above.</div>
-          </div>
-
-          <!-- Custom Theme Builder (visible when Custom theme is selected) -->
+          <!-- Custom Theme Builder (visible when Custom theme is selected) — sits
+               right under the Theme grid, directly below the "Custom" card it belongs to -->
           <div class="setting-group hidden" id="custom-theme-builder">
-            <label class="setting-label">Custom Theme Builder</label>
+            <label class="setting-label" data-i18n="appearance.customThemeBuilder">Custom Theme Builder</label>
 
             <div class="custom-theme-row">
               <span class="custom-theme-row-label">Background Style</span>
@@ -749,6 +694,65 @@
               <button class="btn-sm btn-secondary" id="btn-import-theme">Import Theme...</button>
             </div>
             <div class="setting-hint">Save your custom theme to a file to share it or reuse it on another install, or load one someone shared with you.</div>
+          </div>
+
+          <!-- Accent settings sit right under the Theme grid so they're easy to spot -->
+          <div class="setting-group">
+            <label class="setting-label" data-i18n="appearance.accentColor">Accent Color</label>
+            <div class="accent-colors" id="accent-colors">
+              <button class="accent-dot active" data-accent="#4fc3f7" style="background:#4fc3f7;"></button>
+              <button class="accent-dot" data-accent="#81c784" style="background:#81c784;"></button>
+              <button class="accent-dot" data-accent="#ff8a65" style="background:#ff8a65;"></button>
+              <button class="accent-dot" data-accent="#ce93d8" style="background:#ce93d8;"></button>
+              <button class="accent-dot" data-accent="#fff176" style="background:#fff176;"></button>
+              <button class="accent-dot" data-accent="#ef5350" style="background:#ef5350;"></button>
+              <button class="accent-dot" data-accent="#ffffff" style="background:#ffffff;"></button>
+              <button class="accent-dot" data-accent="#ff4081" style="background:#ff4081;"></button>
+              <button class="accent-dot" data-accent="#00e5ff" style="background:#00e5ff;"></button>
+              <button class="accent-dot" data-accent="#76ff03" style="background:#76ff03;"></button>
+              <button class="accent-dot" data-accent="#ffd600" style="background:#ffd600;"></button>
+              <button class="accent-dot" data-accent="#ff6e40" style="background:#ff6e40;"></button>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label" data-i18n="appearance.accentBrightness">Accent Brightness</label>
+            <input type="range" id="accent-brightness-slider" min="0.6" max="1.4" step="0.05" value="1" class="setting-slider">
+            <span id="accent-brightness-label">100%</span>
+            <div class="setting-hint">Lightens or darkens your accent color independent of overall UI brightness</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label" data-i18n="appearance.accentOutline">Accent Outline Color</label>
+            <input type="color" id="accent-outline-color" class="custom-color-input" value="#4fc3f7" title="Border/outline color">
+            <button class="btn-sm btn-secondary" id="btn-reset-accent-outline">Reset</button>
+            <div class="setting-hint">Separate color for borders and outlines around buttons, inputs, and panels — defaults to matching the accent color</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label" data-i18n="appearance.accentGradient">Accent Gradient</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="accent-gradient-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+            <div class="setting-hint">Uses a two-color gradient instead of a flat color for buttons and highlights</div>
+          </div>
+
+          <div class="setting-group hidden" id="accent-gradient-color2-group">
+            <label class="setting-label">Accent Gradient — 2nd Color</label>
+            <input type="color" id="accent-gradient-color2" class="custom-color-input" value="#ff8a65" title="Second gradient color">
+            <button class="btn-sm btn-secondary" id="btn-reset-accent-gradient-color2">Reset</button>
+            <div class="setting-hint">Defaults to a close tint of your accent color for a subtle blend. Pick your own for more contrast.</div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label" data-i18n="appearance.preview">Preview</label>
+            <div class="accent-preview-box">
+              <button class="accent-preview-btn" type="button">Sample Button</button>
+              <div class="accent-preview-outline">Outline &amp; Border</div>
+              <span class="accent-preview-text">Accent Text</span>
+            </div>
+            <div class="setting-hint">Live preview of your accent color, brightness, outline, and gradient settings above.</div>
           </div>
 
           <div class="setting-group">
@@ -885,7 +889,7 @@
         <!-- Fonts Tab -->
         <div class="settings-panel" id="tab-fonts">
           <div class="setting-group">
-            <label class="setting-label">Editor Font</label>
+            <label class="setting-label" data-i18n="fonts.editorFont">Editor Font</label>
             <select id="editor-font-select" class="setting-select">
               <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
               <option value="'Fira Code', monospace">Fira Code</option>
@@ -898,17 +902,17 @@
               <option value="'Segoe UI', sans-serif">Segoe UI</option>
               <option value="'Arial', sans-serif">Arial</option>
             </select>
-            <div class="setting-hint">Font used in the writing/editing area</div>
+            <div class="setting-hint" data-i18n="fonts.editorFontHint">Font used in the writing/editing area</div>
           </div>
 
           <div class="setting-group">
-            <label class="setting-label">Editor Font Size</label>
+            <label class="setting-label" data-i18n="fonts.editorFontSize">Editor Font Size</label>
             <input type="range" id="global-font-size" min="12" max="28" step="1" value="14" class="setting-slider">
             <span id="font-size-label">14px</span>
           </div>
 
           <div class="setting-group">
-            <label class="setting-label">UI Font</label>
+            <label class="setting-label" data-i18n="fonts.uiFont">UI Font</label>
             <select id="ui-font-select" class="setting-select">
               <option value="'Inter', sans-serif">Inter (Default)</option>
               <option value="Impact, 'Arial Black', sans-serif">Impact</option>
@@ -921,11 +925,11 @@
               <option value="'Poppins', sans-serif">Poppins</option>
               <option value="'Tahoma', sans-serif">Tahoma</option>
             </select>
-            <div class="setting-hint">Font for folder names, labels, sidebar text — everything outside the editor</div>
+            <div class="setting-hint" data-i18n="fonts.uiFontHint">Font for folder names, labels, sidebar text — everything outside the editor</div>
           </div>
 
           <div class="setting-group">
-            <label class="setting-label">UI Font Weight</label>
+            <label class="setting-label" data-i18n="fonts.uiFontWeight">UI Font Weight</label>
             <select id="ui-font-weight" class="setting-select">
               <option value="400">Regular (400)</option>
               <option value="500">Medium (500)</option>
@@ -934,11 +938,11 @@
               <option value="800">Extra-Bold (800)</option>
               <option value="900">Black (900)</option>
             </select>
-            <div class="setting-hint">How bold the UI text appears — great for making file names pop</div>
+            <div class="setting-hint" data-i18n="fonts.uiFontWeightHint">How bold the UI text appears — great for making file names pop</div>
           </div>
 
           <div class="font-preview-box" id="font-preview-box">
-            <div class="font-preview-label">Preview</div>
+            <div class="font-preview-label" data-i18n="fonts.preview">Preview</div>
             <div class="font-preview-ui" id="font-preview-ui">Folder Name / File Name.md</div>
             <div class="font-preview-editor" id="font-preview-editor">The quick brown fox jumps over the lazy dog. 0123456789</div>
           </div>
@@ -947,97 +951,109 @@
         <!-- General Tab -->
         <div class="settings-panel" id="tab-general">
           <div class="setting-group">
-            <label class="setting-label">Display Name</label>
+            <label class="setting-label" data-i18n="general.displayName">Display Name</label>
             <input type="text" id="user-name-input" class="setting-select" placeholder="Enter your name..." style="padding:10px 14px;">
             <div class="setting-hint">Shown on the dashboard welcome screen — make it yours</div>
           </div>
           <div class="setting-group">
-            <label class="setting-label">Vault Location</label>
+            <label class="setting-label" data-i18n="general.language">Language</label>
+            <select id="language-select" class="setting-select">
+              <option value="auto" data-i18n="general.languageAuto">Auto (Detect from System)</option>
+              <option value="en" data-i18n="general.languageEnglish">English</option>
+              <option value="es" data-i18n="general.languageSpanish">Español (Spanish)</option>
+              <option value="fr" data-i18n="general.languageFrench">Français (French)</option>
+              <option value="de" data-i18n="general.languageGerman">Deutsch (German)</option>
+              <option value="ru" data-i18n="general.languageRussian">Русский (Russian)</option>
+            </select>
+            <div class="setting-hint" data-i18n="general.languageHint">Changes the app's interface language immediately — no restart needed.</div>
+          </div>
+          <div class="setting-group">
+            <label class="setting-label" data-i18n="general.vaultLocation">Vault Location</label>
             <div class="setting-row">
               <span id="vault-path-display" class="setting-value">Not set</span>
-              <button class="btn-sm" id="btn-change-vault">Change</button>
+              <button class="btn-sm" id="btn-change-vault" data-i18n="general.change">Change</button>
             </div>
           </div>
           <div class="setting-group">
-            <label class="setting-label">Auto-save</label>
+            <label class="setting-label" data-i18n="general.autoSave">Auto-save</label>
             <label class="toggle-switch">
               <input type="checkbox" id="auto-save-toggle" checked>
               <span class="toggle-slider"></span>
             </label>
-            <div class="setting-hint">Automatically save notes after 1 second of inactivity</div>
+            <div class="setting-hint" data-i18n="general.autoSaveHint">Automatically save notes after 1 second of inactivity</div>
           </div>
           <div class="setting-group">
-            <label class="setting-label">Show file extensions</label>
+            <label class="setting-label" data-i18n="general.showFileExtensions">Show file extensions</label>
             <label class="toggle-switch">
               <input type="checkbox" id="show-extensions" checked>
               <span class="toggle-slider"></span>
             </label>
           </div>
           <div class="setting-group">
-            <label class="setting-label">Confirm before delete</label>
+            <label class="setting-label" data-i18n="general.confirmBeforeDelete">Confirm before delete</label>
             <label class="toggle-switch">
               <input type="checkbox" id="confirm-delete" checked>
               <span class="toggle-slider"></span>
             </label>
           </div>
           <div class="setting-group">
-            <label class="setting-label">Project Tab Mode</label>
+            <label class="setting-label" data-i18n="general.projectTabMode">Project Tab Mode</label>
             <label class="toggle-switch">
               <input type="checkbox" id="project-tab-mode">
               <span class="toggle-slider"></span>
             </label>
-            <div class="setting-hint">Only show tabs from current folder</div>
+            <div class="setting-hint" data-i18n="general.projectTabModeHint">Only show tabs from current folder</div>
           </div>
 
           <div class="setting-group">
-            <label class="setting-label">Time Format</label>
+            <label class="setting-label" data-i18n="general.timeFormat">Time Format</label>
             <select id="time-format-select" class="setting-select">
-              <option value="12">12-Hour (Standard)</option>
-              <option value="24">24-Hour (Military)</option>
+              <option value="12" data-i18n="general.timeFormat12">12-Hour (Standard)</option>
+              <option value="24" data-i18n="general.timeFormat24">24-Hour (Military)</option>
             </select>
-            <div class="setting-hint">Choose how time is displayed on the dashboard and clocks</div>
+            <div class="setting-hint" data-i18n="general.timeFormatHint">Choose how time is displayed on the dashboard and clocks</div>
           </div>
 
           <div class="setting-group">
-            <label class="setting-label">UI Font Size</label>
+            <label class="setting-label" data-i18n="general.uiFontSize">UI Font Size</label>
             <input type="range" id="ui-font-size-slider" min="11" max="16" step="1" value="13" class="setting-slider">
             <span id="ui-font-size-label">13px</span>
-            <div class="setting-hint">Scale all interface text (sidebar, tabs, menus)</div>
+            <div class="setting-hint" data-i18n="general.uiFontSizeHint">Scale all interface text (sidebar, tabs, menus)</div>
           </div>
 
           <div class="setting-group">
-            <label class="setting-label">Dashboard Scale</label>
+            <label class="setting-label" data-i18n="general.dashboardScale">Dashboard Scale</label>
             <select id="dashboard-scale-select" class="setting-select">
-              <option value="default">Default</option>
-              <option value="large">Large</option>
-              <option value="xl">Extra Large</option>
+              <option value="default" data-i18n="general.dashboardScaleDefault">Default</option>
+              <option value="large" data-i18n="general.dashboardScaleLarge">Large</option>
+              <option value="xl" data-i18n="general.dashboardScaleXl">Extra Large</option>
             </select>
-            <div class="setting-hint">Make dashboard widgets bigger and more readable</div>
+            <div class="setting-hint" data-i18n="general.dashboardScaleHint">Make dashboard widgets bigger and more readable</div>
           </div>
 
           <div class="setting-group">
-            <label class="setting-label">Show Keyboard Shortcuts</label>
+            <label class="setting-label" data-i18n="general.showKeyboardShortcuts">Show Keyboard Shortcuts</label>
             <label class="toggle-switch">
               <input type="checkbox" id="show-shortcuts-toggle" checked>
               <span class="toggle-slider"></span>
             </label>
-            <div class="setting-hint">Display keyboard shortcut reference</div>
+            <div class="setting-hint" data-i18n="general.showKeyboardShortcutsHint">Display keyboard shortcut reference</div>
           </div>
 
           <div class="setting-group">
-            <label class="setting-label">Auto Update</label>
+            <label class="setting-label" data-i18n="general.autoUpdate">Auto Update</label>
             <label class="toggle-switch">
               <input type="checkbox" id="auto-update-toggle" checked>
               <span class="toggle-slider"></span>
             </label>
-            <div class="setting-hint">Automatically check for updates on launch and every hour. Off: the bottom-right button still lets you check manually anytime.</div>
+            <div class="setting-hint" data-i18n="general.autoUpdateHint">Automatically check for updates on launch and every hour. Off: the bottom-right button still lets you check manually anytime.</div>
           </div>
         </div>
 
         <!-- Widgets Tab -->
         <div class="settings-panel" id="tab-widgets">
           <div class="setting-group">
-            <label class="setting-label">Show Timezone Clocks</label>
+            <label class="setting-label" data-i18n="widgets.showClocks">Show Timezone Clocks</label>
             <label class="toggle-switch">
               <input type="checkbox" id="show-clocks-toggle" checked>
               <span class="toggle-slider"></span>
@@ -1115,28 +1131,28 @@
             </div>
           </div>
           <div class="setting-group" style="margin-top:16px;">
-            <label class="setting-label">Show Mini Calendar</label>
+            <label class="setting-label" data-i18n="widgets.showMiniCalendar">Show Mini Calendar</label>
             <label class="toggle-switch">
               <input type="checkbox" id="show-calendar-toggle" checked>
               <span class="toggle-slider"></span>
             </label>
           </div>
           <div class="setting-group">
-            <label class="setting-label">Show XOS Logo Widget</label>
+            <label class="setting-label" data-i18n="widgets.showLogoWidget">Show XOS Logo Widget</label>
             <label class="toggle-switch">
               <input type="checkbox" id="show-logo-toggle" checked>
               <span class="toggle-slider"></span>
             </label>
           </div>
           <div class="setting-group">
-            <label class="setting-label">Show Quick Notes</label>
+            <label class="setting-label" data-i18n="widgets.showQuickNotes">Show Quick Notes</label>
             <label class="toggle-switch">
               <input type="checkbox" id="show-sticky-notes-toggle" checked>
               <span class="toggle-slider"></span>
             </label>
           </div>
           <div class="setting-group">
-            <label class="setting-label">Show Quick Tasks</label>
+            <label class="setting-label" data-i18n="widgets.showQuickTasks">Show Quick Tasks</label>
             <label class="toggle-switch">
               <input type="checkbox" id="show-sticky-tasks-toggle" checked>
               <span class="toggle-slider"></span>
@@ -1172,16 +1188,68 @@
         <button class="icon-btn modal-close" id="save-as-close">✕</button>
       </div>
       <div class="save-as-body">
-        <label class="setting-label">File Name</label>
+        <label class="setting-label" data-i18n="saveAs.fileName">File Name</label>
         <input type="text" id="save-as-name" class="save-as-input" placeholder="my-note" spellcheck="false">
-        <label class="setting-label" style="margin-top:14px;">Format</label>
+        <label class="setting-label" style="margin-top:14px;" data-i18n="saveAs.format">Format</label>
         <select id="save-as-format" class="setting-select">
-          <option value="md">Markdown (.md)</option>
-          <option value="txt">Plain Text (.txt)</option>
-          <option value="html">Web Page (.html)</option>
-          <option value="xml">XML Document (.xml)</option>
-          <option value="json">JSON (.json)</option>
-          <option value="pdf">PDF Document (.pdf)</option>
+          <optgroup label="Common">
+            <option value="md">Markdown (.md)</option>
+            <option value="txt">Plain Text (.txt)</option>
+            <option value="html">Web Page (.html)</option>
+            <option value="xml">XML Document (.xml)</option>
+            <option value="json">JSON (.json)</option>
+            <option value="pdf">PDF Document (.pdf)</option>
+          </optgroup>
+          <optgroup label="Data & Config">
+            <option value="yaml">YAML (.yaml)</option>
+            <option value="toml">TOML (.toml)</option>
+            <option value="csv">CSV (.csv)</option>
+            <option value="ini">INI File (.ini)</option>
+            <option value="properties">Properties (.properties)</option>
+            <option value="tex">LaTeX (.tex)</option>
+            <option value="css">CSS (.css)</option>
+            <option value="scss">SCSS (.scss)</option>
+            <option value="sql">SQL (.sql)</option>
+          </optgroup>
+          <optgroup label="Programming Languages">
+            <option value="c">C Source (.c)</option>
+            <option value="cpp">C++ Source (.cpp)</option>
+            <option value="cs">C# Source (.cs)</option>
+            <option value="java">Java (.java)</option>
+            <option value="py">Python (.py)</option>
+            <option value="js">JavaScript (.js)</option>
+            <option value="ts">TypeScript (.ts)</option>
+            <option value="php">PHP (.php)</option>
+            <option value="rb">Ruby (.rb)</option>
+            <option value="go">Go (.go)</option>
+            <option value="rs">Rust (.rs)</option>
+            <option value="swift">Swift (.swift)</option>
+            <option value="kt">Kotlin (.kt)</option>
+            <option value="m">Objective-C (.m)</option>
+            <option value="pl">Perl (.pl)</option>
+            <option value="lua">Lua (.lua)</option>
+            <option value="r">R (.r)</option>
+            <option value="hs">Haskell (.hs)</option>
+            <option value="scala">Scala (.scala)</option>
+            <option value="dart">Dart (.dart)</option>
+            <option value="ex">Elixir (.ex)</option>
+            <option value="erl">Erlang (.erl)</option>
+            <option value="scm">Scheme (.scm)</option>
+            <option value="d">D (.d)</option>
+            <option value="nim">Nim (.nim)</option>
+            <option value="f90">Fortran (.f90)</option>
+            <option value="pas">Pascal (.pas)</option>
+            <option value="asm">Assembly (.asm)</option>
+            <option value="vhd">VHDL (.vhd)</option>
+            <option value="v">Verilog (.v)</option>
+          </optgroup>
+          <optgroup label="Scripting & Shell">
+            <option value="sh">Shell Script (.sh)</option>
+            <option value="bat">Batch File (.bat)</option>
+            <option value="ps1">PowerShell (.ps1)</option>
+            <option value="au3">AutoIt (.au3)</option>
+            <option value="ahk">AutoHotkey (.ahk)</option>
+          </optgroup>
         </select>
         <div class="setting-hint" id="save-as-hint">Saves into your vault, next to the current note.</div>
       </div>
@@ -1194,25 +1262,25 @@
 
   <!-- ═══ CONTEXT MENU ═══ -->
   <div id="context-menu" class="context-menu hidden">
-    <div class="ctx-item" data-action="open">Open</div>
-    <div class="ctx-item" data-action="rename">Rename</div>
-    <div class="ctx-item" data-action="duplicate">Duplicate</div>
+    <div class="ctx-item" data-action="open" data-i18n="contextMenu.open">Open</div>
+    <div class="ctx-item" data-action="rename" data-i18n="contextMenu.rename">Rename</div>
+    <div class="ctx-item" data-action="duplicate" data-i18n="contextMenu.duplicate">Duplicate</div>
     <div class="ctx-sep"></div>
-    <div class="ctx-item ctx-file-only" data-action="save">Save</div>
-    <div class="ctx-item ctx-file-only" data-action="save-as">Save As...</div>
-    <div class="ctx-item ctx-file-only" data-action="save-copy">Save a Copy...</div>
+    <div class="ctx-item ctx-file-only" data-action="save" data-i18n="contextMenu.save">Save</div>
+    <div class="ctx-item ctx-file-only" data-action="save-as" data-i18n="contextMenu.saveAs">Save As...</div>
+    <div class="ctx-item ctx-file-only" data-action="save-copy" data-i18n="contextMenu.saveCopy">Save a Copy...</div>
     <div class="ctx-sep ctx-file-only"></div>
-    <div class="ctx-item" data-action="star">Star / Unstar</div>
-    <div class="ctx-item" data-action="pin">Pin to Top</div>
-    <div class="ctx-item" data-action="color">Color Tag</div>
-    <div class="ctx-item" data-action="colortoggle">Toggle Color Style</div>
-    <div class="ctx-item ctx-submenu" data-action="blocksize">Block Size</div>
+    <div class="ctx-item" data-action="star" data-i18n="contextMenu.starUnstar">Star / Unstar</div>
+    <div class="ctx-item" data-action="pin" data-i18n="contextMenu.pinToTop">Pin to Top</div>
+    <div class="ctx-item" data-action="color" data-i18n="contextMenu.colorTag">Color Tag</div>
+    <div class="ctx-item" data-action="colortoggle" data-i18n="contextMenu.toggleColorStyle">Toggle Color Style</div>
+    <div class="ctx-item ctx-submenu" data-action="blocksize" data-i18n="contextMenu.blockSize">Block Size</div>
     <div class="ctx-sep"></div>
-    <div class="ctx-item" data-action="icon">Change Icon</div>
-    <div class="ctx-item" data-action="explorer">Show in Explorer</div>
-    <div class="ctx-item" data-action="copy-path">Copy Path</div>
+    <div class="ctx-item" data-action="icon" data-i18n="contextMenu.changeIcon">Change Icon</div>
+    <div class="ctx-item" data-action="explorer" data-i18n="contextMenu.showInExplorer">Show in Explorer</div>
+    <div class="ctx-item" data-action="copy-path" data-i18n="contextMenu.copyPath">Copy Path</div>
     <div class="ctx-sep"></div>
-    <div class="ctx-item ctx-danger" data-action="delete">Delete</div>
+    <div class="ctx-item ctx-danger" data-action="delete" data-i18n="contextMenu.delete">Delete</div>
   </div>
 
   <!-- ═══ COLOR TAG PICKER ═══ -->
@@ -1307,6 +1375,7 @@
   <script src="utils/markdown.js"></script>
   <script src="utils/changelog.js"></script>
   <script src="utils/quotes.js"></script>
+  <script src="utils/i18n.js"></script>
   <script src="utils/app.js"></script>
 </body>
 </html>
