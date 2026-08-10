@@ -216,7 +216,7 @@ html, body {
   transition: all 0.15s;
   border-radius: 6px;
 }
-.win-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.win-btn:hover { background: var(--accent-dim); color: var(--accent); }
 .win-close:hover { background: #e81123; color: #fff; }
 
 /* ═══ MAIN CONTENT ═══ */
@@ -536,6 +536,19 @@ html, body {
 .sidebar-header-action:hover { color: var(--accent); background: var(--bg-hover); }
 .sidebar-content { }
 .sidebar-empty { color: var(--text-dim); font-size: 11px; font-style: italic; opacity: 0.6; }
+
+/* Right-sidebar "Info" panel -- real stats for the currently open note */
+.file-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+}
+.file-info-row:last-child { border-bottom: none; }
+.file-info-label { color: var(--text-dim); }
+.file-info-value { color: var(--text-primary); font-weight: 600; }
 .sidebar-link {
   display: flex;
   align-items: center;
@@ -719,7 +732,7 @@ body.full-gradient-mode .widgets-bar {
   padding: 0;
 }
 .sidebar-toggle-btn:hover {
-  background: var(--bg-hover);
+  background: var(--accent-dim);
   color: var(--accent);
 }
 .sidebar-toggle-btn.toggle-left {
@@ -875,8 +888,8 @@ body.full-gradient-mode .widgets-bar {
   max-width: 150px;
 }
 .changelog-toggle-btn:hover {
-  color: var(--text-primary);
-  background: var(--bg-hover);
+  color: var(--accent);
+  background: var(--accent-dim);
 }
 .changelog-toggle-btn svg { flex-shrink: 0; }
 .changelog-dot {
@@ -1471,6 +1484,41 @@ body[data-ui-weight="900"] .ctx-item { font-weight: 900 !important; }
      this keeps it a clean clip instead of the border visually slicing through
      the date numbers. */
   overflow: hidden;
+}
+
+/* Themed tooltip that replaces the browser's native `title` tooltip app-wide.
+   Uses the same accent color as every button's hover state (icon-btn,
+   win-btn, sidebar-toggle-btn, changelog-toggle-btn) so hovering anything
+   in the app reads as one consistent, accent-tied hover system. */
+.xo-tooltip {
+  position: fixed;
+  z-index: 99999;
+  background: var(--bg-elevated);
+  color: var(--accent);
+  border: 1px solid var(--accent-outline);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-family: inherit;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.35), 0 0 10px var(--accent-dim);
+  opacity: 1;
+  transition: opacity 0.12s ease;
+}
+.xo-tooltip.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* Falling snow/dot particles, layered above the gradient wash but still
+   behind all real app content. pointer-events:none so it never blocks
+   clicks on anything underneath it. */
+.bg-particles-canvas {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 0;
+  pointer-events: none;
 }
 
 /* Remove (✕) button on the dashboard calendar/clocks widgets -- only
@@ -3983,7 +4031,7 @@ body[data-ui-font-size="16"] { --ui-scale: 1.231; }
   font-family: inherit;
 }
 .sidebar-toggle-btn:hover {
-  background: var(--bg-hover);
+  background: var(--accent-dim);
   color: var(--accent);
   border-color: var(--accent-outline);
 }

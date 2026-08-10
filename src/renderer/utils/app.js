@@ -352,7 +352,9 @@ const App = {
     }
 
     this.bindEvents();
+    this.initHoverTooltips();
     this.applySettings();
+    this.initBgParticles();
     this.initChangelog();
     this.initAutoUpdate();
     this.startDailyQuoteRotation();
@@ -501,6 +503,90 @@ const App = {
     if (overlay && !overlay.classList.contains('hidden')) this._renderOnboardingStep();
   },
 
+  // ── Hover tooltips (rebuilt from scratch) ──
+  // Previous approach wired a tooltip to every matching element individually
+  // at specific points in time, which meant buttons rendered later could be
+  // missed, and its multi-candidate collision-avoidance placement logic got
+  // complex enough to occasionally place tooltips in worse spots than the
+  // native browser one it was replacing, or skip showing them at all.
+  // This version is one delegated listener for the whole app (so it
+  // automatically covers anything with a `title`, including stuff rendered
+  // after this runs -- no per-widget wiring calls needed anywhere else),
+  // with simple, predictable placement: centered below the element, flipped
+  // above only if there's no room below. The native `title` attribute is
+  // only suppressed for the moment our themed tooltip is showing, then
+  // restored, so it's never actually gone from the element.
+  initHoverTooltips() {
+    if (document.getElementById('xo-tooltip')) return;
+    const tip = document.createElement('div');
+    tip.id = 'xo-tooltip';
+    tip.className = 'xo-tooltip hidden';
+    document.body.appendChild(tip);
+
+    let current = null;
+    const hide = () => {
+      if (current) {
+        const saved = current.getAttribute('data-tooltip-title');
+        if (saved !== null) current.setAttribute('title', saved);
+        current.removeAttribute('data-tooltip-title');
+      }
+      current = null;
+      tip.classList.add('hidden');
+    };
+
+    document.addEventListener('mouseover', (e) => {
+      const el = e.target.closest && e.target.closest('[title]');
+      if (!el || el === current) return;
+      const text = el.getAttribute('title');
+      if (!text) return;
+      if (current) hide();
+      current = el;
+      el.setAttribute('data-tooltip-title', text);
+      el.removeAttribute('title');
+      // The titlebar is only 44px tall with the logo/brand and search bar
+      // packed right up against its buttons, and the left rail / right
+      // sidebar start immediately underneath it -- there's no direction a
+      // floating tooltip can go there without landing on something else.
+      // Rather than re-litigate that placement math again, titlebar
+      // buttons simply don't get a floating tooltip box: the native title
+      // is still suppressed (so the browser's own tooltip can't sneak back
+      // in either), the icons are self-explanatory, and everywhere else in
+      // the app that actually has clearance keeps the themed tooltip.
+      if (el.closest('.titlebar')) return;
+      tip.textContent = text;
+      tip.classList.remove('hidden');
+      this._placeTooltip(tip, el);
+    });
+
+    document.addEventListener('mouseout', (e) => {
+      if (!current || (e.relatedTarget && current.contains(e.relatedTarget))) return;
+      hide();
+    });
+
+    // A tooltip pointing at an element that just scrolled or resized away
+    // from under it looks broken -- simplest fix is to just hide it.
+    window.addEventListener('scroll', hide, true);
+    window.addEventListener('resize', hide);
+    document.addEventListener('mousedown', hide);
+  },
+
+  // Simple, predictable placement: centered below the element, flipped
+  // above if there isn't room, clamped so it never runs off the window.
+  _placeTooltip(tip, el) {
+    const rect = el.getBoundingClientRect();
+    const tipW = tip.offsetWidth || 60;
+    const tipH = tip.offsetHeight || 24;
+    const margin = 8;
+    const vw = window.innerWidth, vh = window.innerHeight;
+
+    let top = rect.bottom + margin;
+    if (top + tipH > vh - 4) top = rect.top - tipH - margin;
+    let left = rect.left + rect.width / 2 - tipW / 2;
+
+    tip.style.left = Math.max(4, Math.min(left, vw - tipW - 4)) + 'px';
+    tip.style.top = Math.max(4, Math.min(top, vh - tipH - 4)) + 'px';
+  },
+
   applySettings() {
     const s = this.settings;
     document.body.className = s.theme;
@@ -511,6 +597,17 @@ const App = {
     document.documentElement.style.setProperty('--accent-dim', s.accent + '22');
     document.documentElement.style.setProperty('--accent-hover', s.accent + '44');
     document.documentElement.style.setProperty('--accent-glow', s.accent + '28');
+    // Secondary/dim text (rail section headers, status bar, widget labels,
+    // the collapse arrow, etc.) used to come from each theme's own baked-in
+    // --text-dim value instead of the user's chosen accent -- every OTHER
+    // accent-colored element (hover highlights, the active space dot, the
+    // selected file row) stayed in sync with a custom accent, but this
+    // secondary text silently didn't. It was easy to miss against the
+    // animated gradient backgrounds (which are theme-tinted the same way),
+    // but glaringly obvious as an unrelated color against a flat Solid
+    // background. Deriving it from the accent here keeps it consistent
+    // everywhere, in every theme and every background style.
+    document.documentElement.style.setProperty('--text-dim', s.accent + 'a0');
     this.applyAccentExtras();
 
     // Compute theme-accent variants from --text-accent (theme-specific color)
@@ -824,6 +921,84 @@ const App = {
     if (blurSlider) blurSlider.value = s.customBackgroundBlur || 0;
     const blurLabel = document.getElementById('bg-blur-label');
     if (blurLabel) blurLabel.textContent = (s.customBackgroundBlur || 0) + 'px';
+
+    this._updateBgParticlesVisibility();
+  },
+
+  // ── Falling background particles ("snow") ──
+  // The animated gradient wash alone shifts too slowly (30s per full cycle)
+  // to actually read as "moving" -- this canvas overlay is the part that's
+  // visibly in motion. Follows the same "Animated Background" setting and
+  // only shows when Background Style is Gradient, same as the wash itself.
+  initBgParticles() {
+    const canvas = document.getElementById('bg-particles-canvas');
+    if (!canvas) return;
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      this._seedBgParticles(canvas);
+    };
+    resize();
+    window.addEventListener('resize', resize);
+    this._updateBgParticlesVisibility();
+  },
+
+  _seedBgParticles(canvas) {
+    const count = 70;
+    this._bgParticles = [];
+    for (let i = 0; i < count; i++) {
+      this._bgParticles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: 1.5 + Math.random() * 3,
+        speed: 0.3 + Math.random() * 0.9,
+        drift: (Math.random() - 0.5) * 0.4,
+        opacity: 0.35 + Math.random() * 0.45
+      });
+    }
+  },
+
+  _updateBgParticlesVisibility() {
+    const canvas = document.getElementById('bg-particles-canvas');
+    if (!canvas) return;
+    const s = this.settings;
+    const shouldRun = !!s.gradientAnimate && (s.backgroundStyle || 'gradient') === 'gradient';
+    canvas.classList.toggle('hidden', !shouldRun);
+    if (shouldRun && !this._bgParticlesRunning) {
+      this._bgParticlesRunning = true;
+      this._runBgParticles();
+    } else if (!shouldRun) {
+      this._bgParticlesRunning = false;
+    }
+  },
+
+  _runBgParticles() {
+    if (!this._bgParticlesRunning) return;
+    const canvas = document.getElementById('bg-particles-canvas');
+    if (!canvas) { this._bgParticlesRunning = false; return; }
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ffffff';
+    // Soft glow so they read as "glowing" dots/snowflakes, not flat pixels.
+    ctx.shadowColor = 'rgba(255,255,255,0.9)';
+    (this._bgParticles || []).forEach(p => {
+      p.y += p.speed;
+      p.x += p.drift;
+      if (p.y - p.r > canvas.height) {
+        p.y = -p.r;
+        p.x = Math.random() * canvas.width;
+      }
+      if (p.x < -10) p.x = canvas.width + 10;
+      if (p.x > canvas.width + 10) p.x = -10;
+      ctx.globalAlpha = p.opacity;
+      ctx.shadowBlur = p.r * 4;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(() => this._runBgParticles());
   },
 
   toggleGlassMode() {
@@ -1082,7 +1257,10 @@ const App = {
     set('--border-glow', accent + '22');
     set('--text-primary', isLight ? '#1a2030' : '#e8e8f4');
     set('--text-secondary', isLight ? '#4a5568' : '#9090b0');
-    set('--text-dim', isLight ? '#8090a8' : '#565678');
+    // Tied to the Custom Theme's own accent (same reasoning as the preset
+    // themes in applySettings()) rather than a fixed light/dark value, so
+    // secondary text never clashes with whichever background you land on.
+    set('--text-dim', accent + 'a0');
     set('--text-accent', accent);
     set('--gradient-1', c1);
     set('--gradient-2', this._mix(c1, c2, 0.33));
@@ -1112,6 +1290,15 @@ const App = {
       gradBg.style.background = mode === 'gradient'
         ? 'linear-gradient(' + angle + 'deg, ' + c1 + ' 0%, ' + this._mix(c1, c2, 0.5) + ' ' + Math.round(spread / 2) + '%, ' + c2 + ' ' + spread + '%)'
         : c1;
+      // Setting `background` as a shorthand resets background-size to its
+      // initial value (auto) *in the inline style*, which wins over the
+      // stylesheet's `background-size: 200% 200%` no matter what -- and
+      // with no oversized image to pan around in, the gradientShift
+      // keyframes animate background-position but there's nothing visible
+      // for it to move, so a Custom Theme's gradient just sat there static.
+      // Re-set it explicitly so the same "drifting" animation the preset
+      // themes get still has room to work with.
+      gradBg.style.backgroundSize = mode === 'gradient' ? '200% 200%' : '100% 100%';
     }
 
     // Live preview on the theme card
@@ -1658,6 +1845,7 @@ const App = {
     if (breadcrumb) breadcrumb.classList.add('hidden');
     if (tabBar) tabBar.classList.add('hidden');
     this.updateWordCharCount('');
+    this.clearFileInfo();
 
     this.updateDashboardDateTime();
     this.renderDashboardCalendar();
@@ -1668,7 +1856,12 @@ const App = {
     if (this.dashboardInterval) clearInterval(this.dashboardInterval);
     this.dashboardInterval = setInterval(() => {
       this.updateDashboardDateTime();
-      this.renderDashboardClocks();
+      // Only the displayed time text needs to change every second -- a full
+      // renderDashboardClocks() rebuild here was tearing down and recreating
+      // every clock box (plus the resize handle / ✕ button) once a second,
+      // which is what caused the visible flicker and the handle seeming to
+      // reappear/misbehave right after unlocking.
+      this.updateDashboardClockTimes();
     }, 1000);
   },
 
@@ -1715,10 +1908,43 @@ const App = {
     }
   },
 
-  renderDashboardCalendar() {
+  async renderDashboardCalendar() {
     const container = document.getElementById('dashboard-calendar');
     if (!container) return;
-    this._renderCalendar(container, true);
+    await this._renderCalendar(container, true);
+    this._reapplyDashboardWidgetControls(container, 'dashboard-calendar-widget', 'dashboardShowCalendar');
+  },
+
+  // Re-adds the resize handle / remove (✕) button after a dashboard widget's
+  // content gets rebuilt. Both renderDashboardClocks() and _renderCalendar()
+  // replace their container's innerHTML wholesale -- the clocks widget does
+  // this every second via dashboardInterval, and the calendar does it any
+  // time a note or a day's dot color changes -- so without this, the handle
+  // and ✕ button (which live as children of that same container) got wiped
+  // out shortly after unlocking, no matter which dashboard theme was active
+  // (this runs in JS regardless of theme, so it fixes all of them at once).
+  _reapplyDashboardWidgetControls(container, id, visKey) {
+    if (!container || this.dashboardLocked) return;
+    if (visKey && this.settings[visKey] === false) return; // hidden -- nothing to add
+    this._makeWidgetResizable(container, id);
+    if (visKey) this._makeWidgetRemovable(container, id, visKey);
+  },
+
+  // Cheap per-second tick: just updates the displayed time text in place,
+  // no DOM teardown/rebuild. This is what the dashboard's 1-second interval
+  // calls now instead of the full renderDashboardClocks() -- rebuilding
+  // every clock box from scratch every second was overkill and caused a
+  // visible flicker, plus it kept recreating the resize handle / ✕ button.
+  updateDashboardClockTimes() {
+    const container = document.getElementById('dashboard-clocks');
+    if (!container) return;
+    const clockEls = container.querySelectorAll('.clock-widget');
+    this.settings.clocks.forEach((clock, idx) => {
+      const el = clockEls[idx];
+      if (!el) return;
+      const timeEl = el.querySelector('.clock-time');
+      if (timeEl) timeEl.textContent = this._getClockTime(clock.tz);
+    });
   },
 
   renderDashboardClocks() {
@@ -1754,6 +1980,8 @@ const App = {
     if (addClockBtn) {
       addClockBtn.addEventListener('click', () => this.addDashboardClock());
     }
+
+    this._reapplyDashboardWidgetControls(container, 'dashboard-clocks-widget', 'dashboardShowClocks');
   },
 
   renderMiniAnalogClock(canvas, tz) {
@@ -2199,6 +2427,12 @@ const App = {
       div.addEventListener('dragleave', () => div.classList.remove('drag-over', 'drag-above', 'drag-below'));
       div.addEventListener('drop', async (e) => {
         e.preventDefault();
+        // Capture which drop zone dragover last put us in BEFORE clearing the
+        // classes that mark it -- this used to be read after the classes were
+        // already stripped, so it was always false and dropping a note
+        // squarely on a folder silently fell through to the "reorder"
+        // branch below instead of actually moving the file into it.
+        const isDragOver = div.classList.contains('drag-over');
         div.classList.remove('drag-over', 'drag-above', 'drag-below');
 
         // OS files dropped on/near this row: import them instead of reordering.
@@ -2217,8 +2451,6 @@ const App = {
 
         e.stopPropagation();
         const srcPath = e.dataTransfer.getData('text/plain');
-        const isDragOver = div.classList.contains('drag-over');
-        div.classList.remove('drag-over', 'drag-above', 'drag-below');
         if (!srcPath || srcPath === item.path) return;
 
         if (isDragOver && item.isDirectory) {
@@ -2357,6 +2589,7 @@ const App = {
     } else {
       this.showMarkdownEditor(tab);
     }
+    this.renderFileInfo(tab);
   },
 
   showVisualEditor(tab) {
@@ -2441,6 +2674,10 @@ const App = {
   toggleEditorMode() {
     if (this.activeTabIndex < 0) return;
     const tab = this.openTabs[this.activeTabIndex];
+    // Find-match spans are real DOM nodes injected into #editor-rich -- they
+    // must not survive into the markdown conversion below, or they'd get
+    // saved into the note as literal <span> tags.
+    this._clearFindHighlights();
     if (this.editorMode === 'visual') {
       const rich = document.getElementById('editor-rich');
       tab.content = MarkdownParser.htmlToMarkdown(rich.innerHTML);
@@ -2467,6 +2704,10 @@ const App = {
     if (this.activeTabIndex < 0) return;
     const tab = this.openTabs[this.activeTabIndex];
     if (!tab) return;
+    // See toggleEditorMode() -- same reasoning, find-match spans can't leak
+    // into a save. Reapplied afterward if the find bar is still open, so
+    // saving mid-search doesn't visually drop the highlights.
+    this._clearFindHighlights();
     if (this.editorMode === 'visual') {
       const rich = document.getElementById('editor-rich');
       tab.content = MarkdownParser.htmlToMarkdown(rich.innerHTML);
@@ -2479,6 +2720,203 @@ const App = {
     this.updateSaveIndicator(false);
     this.updateStatusMessage(this._t('status.saved'));
     this.renderTabs();
+    this.renderFileInfo(tab); // refresh the Info panel's "Modified" date + word/char count
+    this._reapplyFindIfOpen();
+  },
+
+  // ── Find in note (Ctrl+F) ──
+  // Works across all three editor surfaces (visual/contenteditable,
+  // markdown/textarea, and the read-only preview), since only one is ever
+  // visible at a time. Textarea matches are jumped to via selection (a
+  // plain <textarea> has no way to paint an overlay highlight without a
+  // much heavier mirrored-div technique); the HTML surfaces get real
+  // matches wrapped in .find-match spans, which is why those spans are
+  // always stripped back out before any save/markdown conversion.
+  initFindBar() {
+    const bar = document.getElementById('find-bar');
+    const input = document.getElementById('find-input');
+    if (!bar || !input) return;
+    input.addEventListener('input', () => this.runFindSearch(input.value));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); if (e.shiftKey) this.findPrev(); else this.findNext(); }
+      else if (e.key === 'Escape') { e.preventDefault(); this.closeFindBar(); }
+    });
+    const next = document.getElementById('find-next');
+    const prev = document.getElementById('find-prev');
+    const close = document.getElementById('find-close');
+    if (next) next.addEventListener('click', () => this.findNext());
+    if (prev) prev.addEventListener('click', () => this.findPrev());
+    if (close) close.addEventListener('click', () => this.closeFindBar());
+  },
+
+  toggleFindBar() {
+    const bar = document.getElementById('find-bar');
+    if (!bar) return;
+    if (bar.classList.contains('hidden')) {
+      this.openFindBar();
+    } else {
+      // Already open -- Ctrl+F again just reselects the box, like a
+      // browser's find bar, instead of closing it.
+      const input = document.getElementById('find-input');
+      if (input) { input.focus(); input.select(); }
+    }
+  },
+
+  openFindBar() {
+    if (this.activeTabIndex < 0 || !this.openTabs[this.activeTabIndex]) return; // nothing open to search
+    const bar = document.getElementById('find-bar');
+    const input = document.getElementById('find-input');
+    if (!bar || !input) return;
+    bar.classList.remove('hidden');
+    input.focus();
+    input.select();
+    if (input.value) this.runFindSearch(input.value);
+  },
+
+  closeFindBar() {
+    const bar = document.getElementById('find-bar');
+    if (bar) bar.classList.add('hidden');
+    this._clearFindHighlights();
+    this._findMatches = [];
+    this._findIndex = -1;
+    // Return focus to whichever editor surface is showing.
+    const target = this._getFindTarget();
+    if (target && target.el && target.el.focus) target.el.focus();
+  },
+
+  // Whichever editor surface is actually visible right now.
+  _getFindTarget() {
+    const textarea = document.getElementById('editor-textarea');
+    const preview = document.getElementById('editor-preview');
+    const rich = document.getElementById('editor-rich');
+    if (textarea && !textarea.classList.contains('hidden')) return { type: 'textarea', el: textarea };
+    if (preview && !preview.classList.contains('hidden')) return { type: 'html', el: preview };
+    return { type: 'html', el: rich };
+  },
+
+  runFindSearch(query) {
+    this._clearFindHighlights();
+    this._findMatches = [];
+    this._findIndex = -1;
+    const countEl = document.getElementById('find-count');
+    if (!query) { if (countEl) { countEl.textContent = '0/0'; countEl.classList.remove('no-matches'); } return; }
+
+    const target = this._getFindTarget();
+    const q = query.toLowerCase();
+
+    if (target.type === 'textarea') {
+      const lower = target.el.value.toLowerCase();
+      let idx = 0;
+      while (true) {
+        const found = lower.indexOf(q, idx);
+        if (found === -1) break;
+        this._findMatches.push({ start: found, end: found + query.length });
+        idx = found + query.length;
+      }
+    } else {
+      // Walk text nodes and wrap each match in a .find-match span. Matches
+      // that straddle two separately-formatted runs (e.g. half-bolded text)
+      // won't be found this way -- a reasonable, standard limitation for
+      // this kind of in-place highlighting.
+      const walker = document.createTreeWalker(target.el, NodeFilter.SHOW_TEXT, null);
+      const textNodes = [];
+      let node;
+      while ((node = walker.nextNode())) textNodes.push(node);
+      textNodes.forEach(textNode => {
+        const text = textNode.nodeValue;
+        const lower = text.toLowerCase();
+        const ranges = [];
+        let idx = 0;
+        while (true) {
+          const found = lower.indexOf(q, idx);
+          if (found === -1) break;
+          ranges.push([found, found + query.length]);
+          idx = found + query.length;
+        }
+        if (!ranges.length) return;
+        const frag = document.createDocumentFragment();
+        let cursor = 0;
+        ranges.forEach(([s, e]) => {
+          if (s > cursor) frag.appendChild(document.createTextNode(text.slice(cursor, s)));
+          const span = document.createElement('span');
+          span.className = 'find-match';
+          span.textContent = text.slice(s, e);
+          frag.appendChild(span);
+          this._findMatches.push(span);
+          cursor = e;
+        });
+        if (cursor < text.length) frag.appendChild(document.createTextNode(text.slice(cursor)));
+        textNode.parentNode.replaceChild(frag, textNode);
+      });
+    }
+
+    if (this._findMatches.length) {
+      this._findIndex = 0;
+      this._gotoFindMatch();
+    }
+    this._updateFindCount();
+  },
+
+  _gotoFindMatch() {
+    if (this._findIndex < 0 || this._findIndex >= this._findMatches.length) return;
+    const target = this._getFindTarget();
+    const m = this._findMatches[this._findIndex];
+    if (target.type === 'textarea') {
+      target.el.focus();
+      target.el.setSelectionRange(m.start, m.end);
+    } else {
+      document.querySelectorAll('.find-match-active').forEach(el => el.classList.remove('find-match-active'));
+      if (m && m.classList) {
+        m.classList.add('find-match-active');
+        m.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+    }
+  },
+
+  _updateFindCount() {
+    const countEl = document.getElementById('find-count');
+    if (!countEl) return;
+    if (!this._findMatches.length) {
+      countEl.textContent = '0/0';
+      countEl.classList.toggle('no-matches', !!document.getElementById('find-input').value);
+    } else {
+      countEl.textContent = (this._findIndex + 1) + '/' + this._findMatches.length;
+      countEl.classList.remove('no-matches');
+    }
+  },
+
+  findNext() {
+    if (!this._findMatches || !this._findMatches.length) return;
+    this._findIndex = (this._findIndex + 1) % this._findMatches.length;
+    this._gotoFindMatch();
+    this._updateFindCount();
+  },
+
+  findPrev() {
+    if (!this._findMatches || !this._findMatches.length) return;
+    this._findIndex = (this._findIndex - 1 + this._findMatches.length) % this._findMatches.length;
+    this._gotoFindMatch();
+    this._updateFindCount();
+  },
+
+  // Unwraps every .find-match span back into plain text. Safe to call any
+  // time, including when there are no matches (no-op), and always called
+  // before the note's HTML is read for saving/markdown conversion.
+  _clearFindHighlights() {
+    document.querySelectorAll('.find-match').forEach(span => {
+      const parent = span.parentNode;
+      if (!parent) return;
+      parent.replaceChild(document.createTextNode(span.textContent), span);
+      parent.normalize();
+    });
+  },
+
+  _reapplyFindIfOpen() {
+    const bar = document.getElementById('find-bar');
+    const input = document.getElementById('find-input');
+    if (bar && input && !bar.classList.contains('hidden') && input.value) {
+      this.runFindSearch(input.value);
+    }
   },
 
   // ── Save As (choose name + format, saves into the vault) ──
@@ -3825,6 +4263,56 @@ const App = {
     const charEl = document.getElementById('char-count');
     if (wordEl) wordEl.textContent = words + (words === 1 ? ' word' : ' words');
     if (charEl) charEl.textContent = chars + (chars === 1 ? ' char' : ' chars');
+
+    // Keep the right-sidebar Info panel's word/char/reading-time in sync as
+    // you type too -- created/modified dates live separately in
+    // renderFileInfo() since those don't change on every keystroke.
+    const fiWords = document.getElementById('file-info-words');
+    const fiChars = document.getElementById('file-info-chars');
+    const fiReading = document.getElementById('file-info-reading');
+    if (fiWords) fiWords.textContent = words.toLocaleString();
+    if (fiChars) fiChars.textContent = chars.toLocaleString();
+    if (fiReading) {
+      const mins = Math.max(1, Math.round(words / 200)); // ~200 wpm average reading speed
+      fiReading.textContent = mins + ' ' + this._t(mins === 1 ? 'fileInfo.min' : 'fileInfo.mins');
+    }
+  },
+
+  // Populates the right-sidebar "Info" panel with real stats for the
+  // currently open note -- word/char count, an estimated reading time, and
+  // the file's actual created/modified dates from disk. That panel used to
+  // sit there permanently empty.
+  async renderFileInfo(tab) {
+    const container = document.getElementById('file-info');
+    if (!container) return;
+    if (!tab) { this.clearFileInfo(); return; }
+
+    container.innerHTML =
+      '<div class="file-info-row"><span class="file-info-label">' + this._t('fileInfo.words') + '</span><span class="file-info-value" id="file-info-words">0</span></div>' +
+      '<div class="file-info-row"><span class="file-info-label">' + this._t('fileInfo.characters') + '</span><span class="file-info-value" id="file-info-chars">0</span></div>' +
+      '<div class="file-info-row"><span class="file-info-label">' + this._t('fileInfo.readingTime') + '</span><span class="file-info-value" id="file-info-reading">—</span></div>' +
+      '<div class="file-info-row"><span class="file-info-label">' + this._t('fileInfo.created') + '</span><span class="file-info-value" id="file-info-created">—</span></div>' +
+      '<div class="file-info-row"><span class="file-info-label">' + this._t('fileInfo.modified') + '</span><span class="file-info-value" id="file-info-modified">—</span></div>';
+
+    this.updateWordCharCount(tab.content || '');
+
+    try {
+      const stats = await window.xo.getFileStats(tab.path);
+      // The user may have switched to a different tab (or back to the
+      // dashboard) while this was still reading from disk -- don't paint
+      // stale dates over whatever's showing now.
+      if (this.activeTabIndex < 0 || this.openTabs[this.activeTabIndex] !== tab) return;
+      const createdEl = document.getElementById('file-info-created');
+      const modifiedEl = document.getElementById('file-info-modified');
+      const fmt = (iso) => new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      if (stats) {
+        if (createdEl) createdEl.textContent = fmt(stats.created);
+        if (modifiedEl) modifiedEl.textContent = fmt(stats.modified);
+      } else {
+        if (createdEl) createdEl.textContent = this._t('fileInfo.notSavedYet');
+        if (modifiedEl) modifiedEl.textContent = this._t('fileInfo.notSavedYet');
+      }
+    } catch (e) { }
   },
 
   updateBreadcrumb(filePath) {
@@ -4102,7 +4590,7 @@ const App = {
 
   clearFileInfo() {
     const fileInfo = document.getElementById('file-info');
-    if (fileInfo) fileInfo.innerHTML = '';
+    if (fileInfo) fileInfo.innerHTML = '<p class="sidebar-empty">' + this._t('fileInfo.noFileSelected') + '</p>';
   },
 
   highlightActiveTreeItem(filePath) {
@@ -5144,10 +5632,14 @@ const App = {
       }
 
       // One lock (the 🔒/🔓 button on the dashboard) governs resizing AND
-      // removing every widget here — calendar, clocks, and sticky notes all
-      // behave the same way once unlocked.
+      // removing every widget here. The sticky-notes wrapper is excluded
+      // from resizing: it's a plain grid container with no background of
+      // its own (only its two child sections are visible), so attaching a
+      // drag handle to it just produced a floating, unexplained box below
+      // the calendar/clocks row. Its child sections size themselves from
+      // content, so a wrapper-level resize handle added no real value.
       if (!this.dashboardLocked) {
-        this._makeWidgetResizable(widget.el, widget.id);
+        if (widget.id !== 'dashboard-stickies') this._makeWidgetResizable(widget.el, widget.id);
         if (visKey) this._makeWidgetRemovable(widget.el, widget.id, visKey);
       }
     });
@@ -5173,44 +5665,51 @@ const App = {
   },
 
   _makeWidgetResizable(el, id) {
+    // Guard against stacking duplicate handles -- initDashboardWidgets() runs
+    // on every unlock, and without this check, unlocking repeatedly kept
+    // appending another invisible-but-present handle on top of the last one
+    // (and leaked a fresh pair of document-level mousemove/mouseup listeners
+    // every time, too). That's what caused a stray "adjustment box" to keep
+    // showing up.
+    if (el.querySelector('.dashboard-widget-resize-handle')) return;
     const handle = document.createElement('div');
+    handle.className = 'dashboard-widget-resize-handle';
     handle.style.cssText = 'position: absolute; width: 12px; height: 12px; right: 4px; bottom: 4px; cursor: se-resize; background: var(--accent); opacity: 0.3; border-radius: 2px; z-index: 100;';
     el.style.position = 'relative';
     el.appendChild(handle);
 
     const minSize = this._widgetMinSize(id);
-    let isResizing = false;
-    let startX, startY, startWidth, startHeight;
 
     handle.addEventListener('mousedown', (e) => {
       e.preventDefault();
-      isResizing = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      startWidth = el.offsetWidth;
-      startHeight = el.offsetHeight;
-    });
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const startWidth = el.offsetWidth;
+      const startHeight = el.offsetHeight;
 
-    document.addEventListener('mousemove', (e) => {
-      if (!isResizing) return;
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-      const newWidth = Math.max(minSize.width, startWidth + dx);
-      const newHeight = Math.max(minSize.height, startHeight + dy);
-      el.style.width = newWidth + 'px';
-      el.style.height = newHeight + 'px';
-    });
-
-    document.addEventListener('mouseup', () => {
-      if (isResizing) {
-        isResizing = false;
+      // Listeners now live only for the duration of one drag instead of
+      // being registered once per widget forever -- no more accumulation
+      // across repeated lock/unlock cycles.
+      const onMouseMove = (ev) => {
+        const dx = ev.clientX - startX;
+        const dy = ev.clientY - startY;
+        const newWidth = Math.max(minSize.width, startWidth + dx);
+        const newHeight = Math.max(minSize.height, startHeight + dy);
+        el.style.width = newWidth + 'px';
+        el.style.height = newHeight + 'px';
+      };
+      const onMouseUp = () => {
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
         if (!this.settings.widgetSizes) this.settings.widgetSizes = {};
         this.settings.widgetSizes[id] = {
           width: el.offsetWidth,
           height: el.offsetHeight
         };
         this.saveSettings();
-      }
+      };
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
     });
   },
 
@@ -6214,7 +6713,10 @@ const App = {
       else if (e.ctrlKey && e.key === 'n' && !e.shiftKey) { e.preventDefault(); this.createNewFile(); }
       else if (e.ctrlKey && e.shiftKey && e.key === 'N') { e.preventDefault(); document.getElementById('quick-capture-modal').classList.remove('hidden'); }
       else if (e.ctrlKey && e.key === 'p') { e.preventDefault(); document.getElementById('search-input').focus(); }
+      else if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'f') { e.preventDefault(); this.toggleFindBar(); }
     });
+
+    this.initFindBar();
   },
 
   // Pressing Enter or clicking the magnifying glass — jumps straight into

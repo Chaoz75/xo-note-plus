@@ -9,6 +9,95 @@
 
 const CHANGELOG = [
   {
+    version: '1.3.8',
+    date: '2026-07-12',
+    changes: [
+      'Added: Ctrl+F now opens a Find bar over the editor to search within the note you have open -- shows a match count ("3 of 12"), jumps between matches with the up/down arrows or Enter/Shift+Enter, and works in all three editor views (Visual, Markdown, and Preview). Press Ctrl+F again to reselect the search box, or Escape to close it. This is a separate feature from Ctrl+P, which still searches across all your notes by title.'
+    ]
+  },
+  {
+    version: '1.3.7',
+    date: '2026-07-12',
+    changes: [
+      'Fixed: dragging a note onto a folder in the Files panel to move it in there didn\'t work -- it looked like nothing happened, or at most the note quietly reordered itself among its siblings instead of actually moving. The drop handler was checking whether you\'d dropped in the "move into this folder" zone using a marker that had already been cleared a few lines earlier, so that check always came back false. Dragging a note onto a folder now actually moves the file into it.'
+    ]
+  },
+  {
+    version: '1.3.6',
+    date: '2026-07-12',
+    changes: [
+      'Found the actual cause of the recurring "box near Home" reports, and it had nothing to do with tooltips: the SPACES/STARRED/RECENT headers, the Quick Note button, the left rail\'s collapse arrow, the bottom status text, and widget labels were all colored from each theme\'s own baked-in secondary-text color instead of your chosen accent -- for the default theme, that baked-in color happens to be blue. It blended into the animated gradient background (which is tinted the same way) so it went unnoticed there, but stood out clearly against a flat Solid background color, which is exactly the setup where it kept getting reported. That secondary text now always derives from your accent color, in every theme, in every background mode -- Custom Theme included.'
+    ]
+  },
+  {
+    version: '1.3.5',
+    date: '2026-07-12',
+    changes: [
+      'Fixed for good, hopefully: Home, Search, Settings, and Quick Capture kept showing a tooltip box that overlapped the "Spaces" or "Info" headers right below/next to them, no matter how the placement math was tweaked -- the titlebar is genuinely too tight (44px tall, packed against the logo and the panels start immediately underneath) for a floating tooltip to ever fit there cleanly. Those specific buttons now show no tooltip box at all -- the icons speak for themselves -- while every other button in the app (sidebar toggles, dashboard widgets, bottom bar, settings) still gets the full accent-colored tooltip since they actually have room for one.'
+    ]
+  },
+  {
+    version: '1.3.4',
+    date: '2026-07-12',
+    changes: [
+      'Rebuilt the hover tooltip system from scratch. The previous version wired a tooltip to each button individually and tried to dodge nearby content with increasingly complex placement rules, which ended up making things worse in places. It\'s now one simple listener for the whole app -- centered below the button, flipped above only if there\'s no room -- so it behaves the same, predictable way everywhere.',
+      'Every hoverable button (window controls, sidebar collapse arrows, the What\'s New/Creators/Update bar) now highlights with the same accent color on hover instead of a mix of different grays, and the tooltip box itself is outlined in that same accent color -- hovering anything in the app now reads as one consistent hover system tied to your accent color setting.'
+    ]
+  },
+  {
+    version: '1.3.3',
+    date: '2026-07-12',
+    changes: [
+      'Fixed: the new themed tooltip from 1.3.2 could still land right on top of nearby real content (e.g. the Home button\'s tooltip covering the "Spaces" header, or Settings/Quick Capture covering the right sidebar\'s "Info" header) -- it was always anchored below the button regardless of what was already there. It now checks the space below, right, left, and above the button and picks whichever is actually clear of the left rail, right sidebar, logo/brand, search bar, and bottom bar. In the rare corner where none of those are clear (the Home button specifically), it now shows no tooltip at all rather than covering something.'
+    ]
+  },
+  {
+    version: '1.3.2',
+    date: '2026-07-11',
+    changes: [
+      'Found it: the "highlight box popping up in a random spot" (most noticeable hovering the Home button top-left, but it was happening on hover for buttons all over the app) was the browser\'s native tooltip. Every button uses the standard HTML tooltip attribute, which renders as a plain system-colored box positioned by the OS rather than the app -- against the dark theme, and tucked in a window corner, it read as a stray floating box rather than a tooltip. Replaced it app-wide with a themed tooltip that matches the UI and is actually anchored to the button you\'re hovering.'
+    ]
+  },
+  {
+    version: '1.3.1',
+    date: '2026-07-11',
+    changes: [
+      'Fixed: an unexplained empty "adjustment box" could appear below the calendar/clocks row after unlocking the home dashboard. It belonged to the sticky-notes area, which is just an invisible layout wrapper around the two sticky-note boxes — it was getting a drag handle it had no real use for. That wrapper no longer gets a resize handle at all; the sticky-note boxes underneath are unaffected.',
+      'The falling background particles (Settings > Appearance > Animated Background) are now bigger, brighter, and have an actual soft glow, so they read clearly as glowing snow/dots against the gradient instead of being easy to miss. If you still don\'t see them moving after this update, fully close and reopen the app (or reinstall the latest version if you\'re running a downloaded build) — the fix only takes effect once the app reloads the updated code.'
+    ]
+  },
+  {
+    version: '1.3.0',
+    date: '2026-07-11',
+    changes: [
+      'The "Info" panel in the top-right sidebar finally does something — it now shows real stats for whichever note is open: word count, character count, an estimated reading time, and the file\'s actual created/modified dates. Updates live as you type and refreshes the modified date on save.',
+      'Fully translated into all 5 supported languages.'
+    ]
+  },
+  {
+    version: '1.2.9',
+    date: '2026-07-11',
+    changes: [
+      'Fixed: the timezone clocks widget was fully rebuilding itself from scratch every single second just to update the displayed time — that\'s what caused the clock hand/time area to visibly flicker, and it\'s also what kept recreating (and briefly re-flashing) the resize handle every second while the dashboard was unlocked. It now only updates the time text in place, leaving everything else alone.',
+      'Added actual moving background particles (falling snow-like dots) behind the app for the "Animated Background" option — the gradient wash by itself shifted too slowly to read as real motion, so this is the part that\'s now visibly drifting. Follows the same on/off toggle in Settings > Appearance, and only shows when Background Style is set to Gradient.'
+    ]
+  },
+  {
+    version: '1.2.8',
+    date: '2026-07-11',
+    changes: [
+      'Fixed: the timezone clocks widget\'s ✕ and resize handle kept disappearing shortly after unlocking the home dashboard. The clocks widget quietly rebuilds its own display every second to keep the time current, and that rebuild was wiping out the ✕/handle along with it — same underlying issue affected the calendar widget any time it re-rendered. Both now reattach their controls after every rebuild, so unlocking keeps them there for good until you lock again. This is JS-level, so it\'s fixed the same way across all 10 dashboard themes.',
+      'Fixed: a Custom Theme\'s animated background wasn\'t actually animating — setting the custom gradient color was accidentally cancelling out the "oversized, panning" trick the animation relies on, so it just sat there static instead of slowly drifting like the preset themes\' backgrounds do.'
+    ]
+  },
+  {
+    version: '1.2.7',
+    date: '2026-07-11',
+    changes: [
+      'Fixed: unlocking the home dashboard repeatedly could leave a stray resize handle ("adjustment box") sitting on a widget even after removing it with the ✕ — each unlock was quietly stacking another invisible handle on top of the last one instead of reusing it. Unlocking now only ever has exactly one handle per widget, however many times you lock and unlock.'
+    ]
+  },
+  {
     version: '1.2.6',
     date: '2026-07-11',
     changes: [

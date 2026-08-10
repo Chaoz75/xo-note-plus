@@ -3,5 +3,8 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Internal publish tooling — kept locally, not shown on the public repo
+# Internal tooling — kept locally, not shown on the public repo
 PUBLISH-UPDATE.bat
+BUILD-INSTALLER.bat
+SETUP.bat
+START.bat

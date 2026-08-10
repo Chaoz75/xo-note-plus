@@ -12,6 +12,10 @@
 <body class="theme-dark-default" data-gradient-intensity="0.5" data-gradient-animate="true">
   <!-- Animated gradient background -->
   <div id="gradient-bg" class="gradient-bg"></div>
+  <!-- Falling snow/dot particles over the gradient -- follows the same
+       "Animated Background" toggle, only shown when Background Style is
+       set to Gradient. -->
+  <canvas id="bg-particles-canvas" class="bg-particles-canvas hidden"></canvas>
   <!-- Custom background image (Settings > Appearance), hidden until set -->
   <div id="custom-bg-image" class="custom-bg-image hidden"></div>
   <!-- Solid background color layer (Settings > Appearance > Background Style) -->
@@ -192,6 +196,7 @@
               <div class="shortcuts-grid">
                 <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>N</kbd> New Note</div>
                 <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>P</kbd> Quick Search</div>
+                <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>F</kbd> Find in Note</div>
                 <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd> Quick Capture</div>
                 <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>Z</kbd> Undo</div>
                 <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>B</kbd> Bold</div>
@@ -208,6 +213,7 @@
             <div class="welcome-shortcuts">
               <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>N</kbd> New Note</div>
               <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>P</kbd> Quick Search</div>
+              <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>F</kbd> Find in Note</div>
               <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd> Quick Capture</div>
               <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>Z</kbd> Undo</div>
             </div>
@@ -292,6 +298,20 @@
               <div id="editor-rich" class="editor-rich" contenteditable="true" spellcheck="true"></div>
               <textarea id="editor-textarea" class="editor-textarea hidden" spellcheck="true"></textarea>
               <div id="editor-preview" class="editor-preview hidden"></div>
+              <div id="find-bar" class="find-bar hidden">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+                <input type="text" id="find-input" data-i18n-placeholder="editor.find.placeholder" placeholder="Find in note..." autocomplete="off">
+                <span id="find-count" class="find-count">0/0</span>
+                <button class="icon-btn-sm" id="find-prev" title="Previous match" data-i18n-title="editor.find.prev">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                </button>
+                <button class="icon-btn-sm" id="find-next" title="Next match" data-i18n-title="editor.find.next">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <button class="icon-btn-sm" id="find-close" title="Close" data-i18n-title="titlebar.close">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -305,7 +325,7 @@
             Info
           </div>
           <div id="file-info" class="sidebar-content">
-            <p class="sidebar-empty">No file selected</p>
+            <p class="sidebar-empty" data-i18n="fileInfo.noFileSelected">No file selected</p>
           </div>
         </div>
 
@@ -405,7 +425,7 @@
       <div class="bottom-right">
         <button class="changelog-toggle-btn" id="btn-changelog" title="What's New" data-i18n-title="bottomBar.whatsNew">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-          <span id="changelog-version-label">v1.2.6</span>
+          <span id="changelog-version-label">v1.3.8</span>
           <span class="changelog-dot hidden" id="changelog-dot"></span>
         </button>
         <button class="changelog-toggle-btn" id="btn-creators" title="Creators" data-i18n-title="bottomBar.creators">

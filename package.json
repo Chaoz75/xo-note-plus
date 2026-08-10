@@ -1,6 +1,6 @@
 {
   "name": "xo-note-plus",
-  "version": "1.2.6",
+  "version": "1.3.8",
   "description": "XO NOTE+ — A premium local markdown workspace by XO Systems",
   "main": "src/main/main.js",
   "scripts": {

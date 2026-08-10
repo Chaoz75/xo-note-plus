@@ -139,6 +139,57 @@
 
 .editor-rich:focus { outline: none; }
 
+/* ── Find in note (Ctrl+F) ── */
+/* Floats over whichever editor surface is currently visible (visual,
+   markdown textarea, or preview) -- .editor-split is the shared
+   position:relative ancestor for all three, so this one bar works no
+   matter which mode you're in. */
+.find-bar {
+  position: absolute;
+  top: 12px;
+  right: 20px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--accent-outline);
+  border-radius: 10px;
+  padding: 6px 8px 6px 12px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(16px);
+  color: var(--text-dim);
+}
+.find-bar.hidden { display: none; }
+.find-bar input {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 12px;
+  width: 170px;
+  outline: none;
+  font-family: inherit;
+}
+.find-bar input::placeholder { color: var(--text-dim); }
+.find-count {
+  font-size: 11px;
+  color: var(--text-dim);
+  min-width: 44px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.find-count.no-matches { color: #ff6b6b; }
+.find-bar .icon-btn-sm { color: var(--text-dim); }
+.find-bar .icon-btn-sm:hover { color: var(--accent); background: var(--accent-dim); }
+
+/* Match highlights inside the contenteditable/preview surfaces -- a
+   different class than <mark> on purpose, since <mark> is already the
+   user-facing "Highlight" formatting tool and these two would otherwise be
+   visually and semantically indistinguishable (and risk getting saved into
+   the note itself if ever confused for real content). */
+.find-match { background: var(--accent-dim); border-radius: 2px; }
+.find-match-active { background: var(--accent); color: #000; }
+
 /* ── Rich editor typography ── */
 .editor-rich h1 {
   font-size: 2em;
